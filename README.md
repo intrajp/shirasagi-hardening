@@ -86,12 +86,12 @@ gpgkey=https://www.mongodb.org/static/pgp/server-3.4.asc
 # gem install bundler
 ```
 
-### SHIRASAGI のインストール
+### SHIRASAGI-hardening のインストール
 
-SHIRASAGI のダウンロード (stable)
+SHIRASAGI-hardening のダウンロード
 
 ```
-$ git clone -b stable --depth 1 https://github.com/shirasagi/shirasagi /var/www/shirasagi
+$ git clone https://github.com/intrajp/shirasagi-hardening /var/www/shirasagi
 ```
 
 設定ファイルの設置と gem のインストール
