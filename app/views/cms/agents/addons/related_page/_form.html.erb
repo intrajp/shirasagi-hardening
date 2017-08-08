@@ -1,0 +1,31 @@
+<%= jquery do %> SS_AddonTabs.hide(".mod-cms-related_pages"); <% end %>
+
+<dl class="see mod-cms-related_pages">
+  <dt><%= @model.t :related_page_ids %><%= @model.tt :related_page_ids %></dt>
+  <dd>
+    <%= f.hidden_field "related_page_ids[]", value: "", class: "hidden-ids" %>
+    <%= link_to t("cms.apis.pages.index"), cms_apis_pages_path, class: "ajax-box" %>
+  </dd>
+  <dd>
+    <table class="index ajax-selected">
+      <thead>
+        <tr>
+          <th class="name"><%= @model.t :name %></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @item.related_pages.each do |page| %>
+        <tr data-id="<%= page.id %>">
+          <td><%= f.hidden_field "related_page_ids[]", value: page.id %> <%= page.name %></td>
+          <td><%= link_to t("ss.buttons.delete"), "#", class: "deselect btn" %></td>
+        </tr>
+        <% end %>
+        <tr style="display:none" <%= raw(@item.present? ? "data-id=#{@item.id}" : "") %>></tr>
+      </tbody>
+    </table>
+  </dd>
+
+  <dt><%= @model.t :related_page_sort %><%= @model.tt :related_page_sort %></dt>
+  <dd><%= f.select :related_page_sort, @item.related_page_sort_options, include_blank: true %></dd>
+</dl>

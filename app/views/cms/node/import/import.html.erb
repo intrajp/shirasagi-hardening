@@ -1,0 +1,23 @@
+<%= form_for :item, url: { action: :import }, html: {id: "item-form", method: :post, multipart: true} do |f| %>
+  <%= error_messages_for :item %>
+
+  <section class="main-box">
+    <header><h2><%= t :"cms.import_page" %></h2></header>
+
+    <dl class="see">
+      <dt><%= @model.t :in_file %><%= @model.tt :in_file %></dt>
+      <dd><%= f.file_field :in_file %></dd>
+
+      <dt><%= @model.t :import_date %><%= @model.tt :import_date %></dt>
+      <dd><%= f.text_field :import_date, class: "date js-datetime" %></dd>
+
+      <dt><%= t "ss.import_log" %></dt>
+      <dd><%= link_to t("job.log"), job_cms_logs_path, target: "_blank" %></dd>
+    </dl>
+  </section>
+
+  <footer class="send">
+    <%= f.submit t("ss.buttons.import"), class: :save %>
+    <%= f.button t("ss.buttons.cancel"), type: :reset, class: "btn-default", onclick: "location.href='#{contents_path(@cur_node)}'; return false;" %>
+  </footer>
+<% end %>

@@ -1,0 +1,13 @@
+# recommend
+
+production: &production
+  # Disable recommend history logs.
+  disable: true
+
+  max_neighbors: 50
+
+test:
+  <<: *production
+
+development:
+  <<: *production

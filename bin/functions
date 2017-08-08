@@ -1,0 +1,30 @@
+# functions - functions for shirasagi-hardening
+#
+# Copyright(C) Shintaro Fujiwara
+
+# error message 
+
+err_msg () {
+    echo "Oops! Something went wrong!"
+    exit 1
+}
+
+# check user is root 
+
+check_root () {
+    local myresult=""
+    if [ ${EUID:-${UID}} = 0 ]; then
+        myresult="root"
+    else
+        myresult="nonroot" 
+    fi
+    echo "${myresult}"
+}
+
+# check SELinux is enabled 
+
+check_SELinux_is_enabled () {
+    local myresult=""
+    myresult=$(getenforce)
+    echo "${myresult}"
+}

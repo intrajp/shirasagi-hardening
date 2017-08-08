@@ -1,0 +1,78 @@
+require 'spec_helper'
+
+describe "board_posts", dbscope: :example do
+  let(:site) { cms_site }
+  let(:node) { create_once :board_node_post, filename: "posts", name: "posts" }
+  let(:item) { create(:board_post, node: node) }
+  let(:index_path) { board_posts_path site.id, node }
+  let(:new_path) { new_board_post_path site.id, node }
+  let(:show_path) { board_post_path site.id, node, item }
+  let(:edit_path) { edit_board_post_path site.id, node, item }
+  let(:delete_path) { delete_board_post_path site.id, node, item }
+
+  context "with auth" do
+    before { login_cms_user }
+
+    it "#index" do
+      visit index_path
+      expect(current_path).not_to eq sns_login_path
+
+      expect(page).to have_css('div#menu nav a', text: '新規作成')
+      expect(page).to have_css('div#menu nav a', text: 'ダウンロード')
+    end
+
+    it "#new" do
+      visit new_path
+
+      expect(page).to have_css('div#menu nav a', text: '一覧へ戻る')
+
+      within "form#item-form" do
+        fill_in "item[name]", with: "sample"
+        fill_in "item[poster]", with: "sample"
+        fill_in "item[text]", with: "sample"
+        fill_in "item[delete_key]", with: "pass"
+        click_button "保存"
+      end
+      expect(status_code).to eq 200
+      expect(current_path).not_to eq new_path
+      expect(page).to have_no_css("form#item-form")
+    end
+
+    it "#show" do
+      visit show_path
+      expect(status_code).to eq 200
+      expect(current_path).not_to eq sns_login_path
+
+      expect(page).to have_css('div#menu nav a', text: '編集する')
+      expect(page).to have_css('div#menu nav a', text: '返信する')
+      expect(page).to have_css('div#menu nav a', text: '削除する')
+      expect(page).to have_css('div#menu nav a', text: '一覧へ戻る')
+    end
+
+    it "#edit" do
+      visit edit_path
+
+      expect(page).to have_css('div#menu nav a', text: '詳細へ戻る')
+      expect(page).to have_css('div#menu nav a', text: '一覧へ戻る')
+
+      within "form#item-form" do
+        fill_in "item[name]", with: "modify"
+        click_button "保存"
+      end
+      expect(current_path).not_to eq sns_login_path
+      expect(page).to have_no_css("form#item-form")
+    end
+
+    it "#delete" do
+      visit delete_path
+
+      expect(page).to have_css('div#menu nav a', text: '詳細へ戻る')
+      expect(page).to have_css('div#menu nav a', text: '一覧へ戻る')
+
+      within "form" do
+        click_button "削除"
+      end
+      expect(current_path).to eq index_path
+    end
+  end
+end

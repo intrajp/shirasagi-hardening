@@ -1,0 +1,363 @@
+// Webmail
+
+// -------------------------------------------------------------------------------------------------
+// menu and common
+
+.webmail-dropdown-menu {
+  left: 0;
+  margin: 0;
+  padding: 5px 0;
+  border: 1px solid #ccc;
+  @include box-shadow(0px 3px 12px rgba(0,0,0,.2));
+  background: #fff;
+  text-align: left;
+  a {
+    @include truncate;
+    padding: 5px 10px;
+    color: $black;
+  }
+  a:hover {
+    background-color: $gray1;
+    color: $orange;
+    text-decoration: none;
+  }
+  .pad {
+    display: inline-block;
+    width: 10px;
+  }
+}
+#menu .nav-menu .dropdown {
+  display: inline;
+  .dropdown-menu {
+    a {
+      display: block;
+      padding: 5px 10px;
+      background-image: none;
+    }
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+// navi
+
+.webmail-navi {
+  .reload {
+    &:hover { background: none !important; }
+    &:hover .material-icons { color: $orange; }
+    &.disabled .material-icons { color: rgba(0,0,0,.2); }
+  }
+}
+.webmail-navi-mailboxes {
+  .reload {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 1;
+    padding: 7px 8px 9px;
+  }
+  .unseen {
+    color: $orange;
+    font-weight: bold;
+  }
+  .unseen.count0 {
+    display: none;
+  }
+  .mailboxes {
+    a {
+      display: inline-block;
+      width: 100%;
+      padding: 5px 0 5px 16px;
+    }
+    a:last-child {
+      margin-bottom: 8px;
+    }
+    .pad {
+      display: inline-block;
+      width: 16px;
+    }
+    .material-icons {
+      margin-right: 2px;
+    }
+    .mailbox-name {
+      vertical-align: middle;
+    }
+    a:hover {
+      text-decoration: none;
+    }
+    .mailbox--noselect .material-icons {
+      color: rgba(0,0,0,.5);
+    }
+  }
+}
+.webmail-navi-quota {
+  position: relative;
+  .reload {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+  }
+  .quota {
+    margin: 0 10px 10px;
+    border: 1px solid #ccc;
+    background-color: #ddd;
+    @include background(linear-gradient(top, #ddd, #eee));
+    line-height: 20px;
+  }
+  .label {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+  }
+  .usage {
+    height: 20px;
+    background-color: #6d6;
+    @include background(linear-gradient(top, #dfd, #4b4));
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+// mails
+
+.webmail-mails-head {
+  .dropdown {
+    display: inline;
+    font-weight: normal;
+    .btn {
+      padding-right: 8px;
+    }
+  }
+  .dropdown-menu {
+    width: 200px;
+  }
+}
+.webmail-mail-search-label {
+  padding: 10px 20px;
+  border-bottom: 1px solid #eee;
+}
+.webmail-mail-search {
+  display: none;
+  margin: 0 10px;
+  padding: 10px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+@media print {
+  .webmail-print {
+    #head, #foot, #navi, #crumbs, #menu {
+      display: none;
+    }
+    #page:after {
+      display: none;
+    }
+    #main, #main .wrap {
+      margin: 0;
+    }
+  }
+}
+
+// index
+.webmail-mails {
+  .list-item {
+    padding: 5px 8px;
+  }
+  .info {
+    @include truncate;
+    .field {
+      display: inline-block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      vertical-align: text-top;
+    }
+    .from, .to {
+      width: 150px;
+      padding-right: 5px;
+    }
+    .title {
+      width: calc(100% - 330px);
+      widht: -webkit-calc(100% - 330px);
+      padding-right: 5px;
+      font-size: 100%;
+    }
+    .datetime {
+      width: 110px;
+      font-weight: normal;
+    }
+    .size {
+      width: 50px;
+      font-weight: normal;
+      text-align: right;
+    }
+  }
+}
+
+// show
+.webmail-mail {
+  .addon-head {
+    padding: 1px 15px 15px;
+    .icon-star {
+      float: right;
+      margin: 12px 0 0;
+      &.on    .material-icons { color: #f70; }
+      &.off   .material-icons { color: #ddd; }
+      &:hover .material-icons { opacity: 0.8; }
+    }
+    .subject {
+      display: block;
+      margin: 12px 0;
+      font-size: 130%;
+      line-height: 1.4;
+    }
+    .from {
+      float: left;
+    }
+    .date {
+      text-align: right;
+    }
+  }
+  .addresses {
+    padding: 5px 15px;
+    border-top: 1px solid #e4e4e4;
+    background-color: #fafafa;
+    .address {
+      padding: 3px 0;
+      .label {
+        float: left;
+        color: #888;
+      }
+      .value {
+        padding: 0 0 0 45px;
+      }
+    }
+  }
+  .show-image {
+    display: block;
+    margin: -5px 0 10px;
+    padding: 8px;
+    border: 1px solid #fd8;
+    background-color: rgba(255,255,0,.2);
+    background-color: #ffc;
+    text-decoration: none;
+    text-align: center;
+    &:hover {
+      border-color: #fb8;
+      background-color: rgba(255,255,0,.35);
+      background-color: #ffa;
+    }
+  }
+  .addon-body {
+    min-height: 200px;
+    border-top: 1px solid #e4e4e4;
+    .body--html img[data-url] {
+       height: none;
+    }
+  }
+  .attachments {
+    padding: 15px 15px 5px;
+    border-top: 1px solid #e4e4e4;
+    .file {
+      display: inline-block;
+      margin: 0 10px 10px 0;
+    }
+  }
+}
+
+// form
+.webmail-mail-form-address {
+  margin: 0;
+  padding: 0 10px;
+  &.cc-bcc {
+    //display: none;
+    margin-top: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #e4e4e4;
+  }
+  dt {
+    float: left;
+    min-width: 50px;
+    color: #a0522d;
+    font-weight: bold;
+  }
+  dd {
+    margin-left: 50px;
+  }
+  .address {
+    height: auto;
+  }
+}
+.cc-bcc-label {
+  display: inline-block;
+  margin: 0 0 0 60px;
+  color: #888;
+}
+.webmail-addon-mail-body {
+  .subject {
+    float: left;
+    width: calc(100% - 300px);
+    widht: -webkit-calc(100% - 300px);
+    min-width: 300px;
+    margin-bottom: 15px;
+    input {
+      width: 100%;
+      padding: 10px 6px;
+    }
+  }
+  .options {
+    float: right;
+    margin-bottom: 15px;
+    text-align: right;
+  }
+  #item_signature {
+    max-width: 200px;
+  }
+  .body-content {
+    clear: both;
+    margin-top: 15px;
+  }
+}
+// form-addresses
+.webmail-address-field.see {
+  padding: 0;
+  .ajax-box {
+    float: left;
+  }
+  .addresses {
+    @include clear;
+    display: block;
+    tbody, td {
+      display: inline;
+      float: left;
+    }
+    tr {
+      display: inline-block;
+      float: left;
+      margin: 4px 10px 6px 0;
+      td:first-of-type {
+        padding: 2px 0;
+        border-bottom: 1px dashed #aaa;
+        color: #048;
+      }
+    }
+    .deselect {
+      margin-left: 4px;
+      padding: 2px 4px;
+    }
+  }
+}
+.webmail-addon-mail-file {
+  .action a {
+    display: none;
+  }
+  .action a:last-of-type {
+    display: inline-block;
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+// filter
+
+.webmail-filter-conditions {
+  div {
+    margin: 15px 0 0;
+  }
+}

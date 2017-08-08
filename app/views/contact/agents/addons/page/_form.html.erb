@@ -1,0 +1,56 @@
+<%= jquery do %> SS_AddonTabs.hide(".mod-contact-page"); <% end %>
+
+<dl class="see mod-contact-page">
+  <dt><%= @model.t :contact_state %><%= @model.tt :contact_state %></dt>
+  <dd><%= f.select :contact_state, @item.contact_state_options %></dd>
+
+  <dt><%= @model.t :contact_group_id %><%= @model.tt :contact_group_id %></dt>
+  <dd>
+    <%= f.hidden_field "contact_group_id", value: "", class: "hidden-ids" %>
+    <%= link_to t("contact.search_groups.index"), contact_search_groups_path, class: "ajax-box" %>
+  </dd>
+  <dd>
+    <table class="index ajax-selected">
+      <thead>
+        <tr>
+          <th class="name"><%= Cms::Group.t :name %></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if params[:action] =~ /new/ %>
+          <tr data-id="<%= @cur_group.id %>">
+            <td><%= f.hidden_field "contact_group_id", value: @cur_group.id %> <%= @cur_group.name %></td>
+            <td><%= link_to t("ss.buttons.delete"), "#", class: "deselect btn" %></td>
+          </tr>
+        <% else %>
+          <% group = SS::Group.find_by id: @item.contact_group_id rescue nil %>
+          <% if group.present? %>
+            <tr data-id="<%= @item.contact_group_id %>">
+              <td><%= f.hidden_field "contact_group_id", value: @item.contact_group_id %> <%= group.name %></td>
+              <td><%= link_to t("ss.buttons.delete"), "#", class: "deselect btn" %></td>
+            </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+  </dd>
+
+  <dt><%= @model.t :contact_charge %><%= @model.tt :contact_charge %></dt>
+  <dd><%= f.text_field :contact_charge %></dd>
+
+  <dt><%= @model.t :contact_tel %><%= @model.tt :contact_tel %></dt>
+  <dd><%= f.text_field :contact_tel, value: (params[:action] =~ /new/) ? @cur_group[:contact_tel] : @item.contact_tel %></dd>
+
+  <dt><%= @model.t :contact_fax %><%= @model.tt :contact_fax %></dt>
+  <dd><%= f.text_field :contact_fax, value: (params[:action] =~ /new/) ? @cur_group[:contact_fax] : @item.contact_fax %></dd>
+
+  <dt><%= @model.t :contact_email %><%= @model.tt :contact_email %></dt>
+  <dd><%= f.text_field :contact_email, value: (params[:action] =~ /new/) ? @cur_group[:contact_email] : @item.contact_email %></dd>
+
+  <dt><%= @model.t :contact_link_url %><%= @model.tt :contact_link_url %></dt>
+  <dd><%= f.text_field :contact_link_url, value: (params[:action] =~ /new/) ? @cur_group[:contact_link_url] : @item.contact_link_url %></dd>
+
+  <dt><%= @model.t :contact_link_name %><%= @model.tt :contact_link_name %></dt>
+  <dd><%= f.text_field :contact_link_name, value: (params[:action] =~ /new/) ? @cur_group[:contact_link_name] : @item.contact_link_name %></dd>
+</dl>

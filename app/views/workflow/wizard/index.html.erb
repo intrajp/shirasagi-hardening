@@ -1,0 +1,47 @@
+<%= coffee do %>
+$ ->
+
+  $(".workflow-route-start").on "click", (e) ->
+    uri = location.pathname.split("/")
+    uri[2] = "workflow" + "<%= @cur_node? @cur_node.id : "" %>"
+    uri[3] = "wizard"
+    uri = uri.join("/")  + "/approver_setting"
+    route_id = $("#workflow_route").val()
+    $.ajax
+      type: "post"
+      url: uri
+      async: false
+      data:
+        route_id: route_id
+      success: (html, status) ->
+        $(".workflow-partial-section").html(html)
+      error: (xhr, status) ->
+        try
+          errors = $.parseJSON(xhr.responseText)
+          alert(errors.join("\n"));
+        catch
+          alert(["== Error =="].concat(xhr["statusText"]).join("\n"));
+    e.preventDefault()
+
+<% end %>
+
+<% if @ss_mode == :cms %>
+  <% route_options = Workflow::Route.site(@cur_site).route_options(@cur_user) %>
+<% else %>
+  <% route_options = Workflow::Route.route_options(@cur_user) %>
+<% end %>
+<% if route_options.present? %>
+<dl class="see">
+  <dt><%= t("workflow.request") %><%= @model.tt :workflow_routes %></dt>
+  <dd>
+    <% if @ss_mode == :cms %>
+      <%= select_tag :workflow_route, options_for_select(route_options) %>
+    <% else %>
+      <%= select_tag :workflow_route, options_for_select(route_options) %>
+    <% end %>
+    <%= link_to t("workflow.buttons.select"), "#", class: "workflow-route-start cboxElement btn" %>
+  </dd>
+</dl>
+<% else %>
+<h1><%= t("workflow.empty_route_options") %></h1>
+<% end %>

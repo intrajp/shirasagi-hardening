@@ -1,0 +1,22 @@
+<%
+
+## locals: [:f, :field]
+addresses = @item.send(field).map(&:presence).uniq.compact
+
+%>
+<%= javascript_tag do %>
+SS_SearchUI.select = Webmail_Mail_Form_Address.select;
+<% end %>
+
+<dl class="see webmail-address-field">
+  <dd class="wide">
+    <%= link_to webmail_apis_addresses_path, class: "ajax-box" do %>
+      <%= t "mongoid.models.webmail/address" %>
+    <% end %>
+    <% @cur_user.root_groups.each do |group| %>
+      <%= link_to gws_apis_users_path(site: group), class: "ajax-box" do %>
+        <%= group.name %><%= t "mongoid.models.ss/user" %>
+      <% end %>
+    <% end %>
+  </dd>
+</dl>

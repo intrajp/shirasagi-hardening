@@ -1,0 +1,16 @@
+<div class="archive-nav">
+  <nav class="monthly-nav">
+    <ul>
+      <% @months.each do |date, num| %>
+        <% body = "#{date.year}#{t('datetime.prompts.year')}#{date.month}#{t('datetime.prompts.month')}(#{num})" %>
+        <li>
+          <% if num.zero? %>
+            <span><%= body %></span>
+          <% else %>
+            <%= link_to body, sprintf("#{@cur_part.parent.try(:url)}%04d%02d", date.year, date.month) %>
+          <% end %>
+         </li>
+      <% end %>
+    </ul>
+  </nav>
+</div>

@@ -1,0 +1,91 @@
+<div class="columns">
+<% content = @answer.source_content if @answer %>
+<% if content %>
+  <dl class="column">
+    <dt><%= Cms::Page.t :name %></dt>
+    <dd><%= content.name %></dd>
+  </dl>
+<% end %>
+<% @items.each do |column, data, confirm_data| %>
+  <dl class="column">
+    <dt>
+    <%= column.name %>
+    <% if column.required == "required" %>
+      <span class="required"><%= t('inquiry.required_field') %></span>
+    <% end %>
+    </dt>
+    <dd>
+    <% if confirm %>
+      <% if data.kind_of? Hash %>
+        <% data.each do |key, value| %>
+          <% opt = {id: "#{f.object_name}_#{column.id}_#{key}" } %>
+          <%= hidden_field_tag "#{f.object_name}[#{column.id}][#{key}]", value, opt %><%= value %><br />
+        <% end %>
+      <% else %>
+        <% if column.input_type =~ /upload_file/ %>
+          <% @answer.data.each do |ans|  %>
+            <% if ans.column_id == column.id %>
+              <%= hidden_field_tag "#{f.object_name}[#{column.id}]", ans.values[0] if ans.values[0] %>
+            <% end %>
+          <% end %>
+          <%= tryb { data.original_filename } || tryb { data.name } if data %><br />
+        <% else %>
+          <%= f.hidden_field column.id, value: data %><%=br data %>
+          <% if column.input_confirm == "enabled" %>
+            <%= f.hidden_field "#{column.id}_confirm", value: confirm_data %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% else %>
+      <%= raw column.html %>
+      <% if column.input_type =~ /(text_field|email_field|text_area)/ %>
+        <% opt = { value: data } %>
+        <% opt.merge!(column.additional_attr_to_h) %>
+        <%= f.send(column.input_type, column.id, opt) %>
+      <% elsif column.input_type =~ /select/ %>
+        <% opt = column.additional_attr_to_h %>
+        <%= f.send(column.input_type, column.id, column.select_options, { selected: data, include_blank: true }, opt) %>
+      <% elsif column.input_type =~ /radio_button/ %>
+        <fieldset>
+        <% column.select_options.each_with_index do |value, i| %>
+          <% opt = { id: "#{f.object_name}_#{column.id}_#{i}" } %>
+          <% opt.merge!(column.additional_attr_to_h) %>
+          <% checked = (data == value) %>
+          <%= label_tag "#{f.object_name}_#{column.id}_#{i}" do %>
+            <%= send("#{column.input_type}_tag", "#{f.object_name}[#{column.id}]", value, checked, opt) %><span><%= value %></span>
+          <% end %>
+        <% end %>
+        </fieldset>
+      <% elsif column.input_type =~ /check_box/ %>
+        <fieldset>
+        <% column.select_options.each_with_index do |value, i| %>
+          <% opt = column.additional_attr_to_h %>
+          <% checked = data.try(:[], "#{i}") ? true : false %>
+          <%= label_tag "#{f.object_name}_#{column.id}_#{i}" do %>
+            <%= send("#{column.input_type}_tag", "#{f.object_name}[#{column.id}][#{i}]", value, checked, opt) %><span><%= value %></span>
+          <% end %>
+        <% end %>
+        </fieldset>
+      <% elsif column.input_type =~ /upload_file/ %>
+        <% opt = {id: "#{f.object_name}_#{column.id}" } %>
+        <% opt.merge!(column.additional_attr_to_h) %>
+        <%= file_field_tag "#{f.object_name}[#{column.id}]", opt %>
+      <% end %>
+    <% end %>
+    </dd>
+    <% if column.input_confirm == "enabled" && !confirm %>
+      <dt>
+        <%= f.label "#{column.id}_confirm", t("inquiry.confirm_input", name: column.name) %>
+        <% if column.required == "required" %>
+          <span class="required"><%= t('inquiry.required_field') %></span>
+        <% end %>
+      </dt>
+      <dd>
+        <p><%= t "inquiry.confirm_input_description", name: column.name %></p>
+        <% opt = { value: "" } %>
+        <%= f.send(column.input_type, "#{column.id}_confirm", opt) %>
+      </dd>
+    <% end %>
+  </dl>
+<% end %>
+</div>

@@ -1,0 +1,24 @@
+<%= jquery do %>
+  //SS_AddonTabs.hide(".gws-schedule-facility");
+<% end %>
+
+<dl class="see gws-schedule-facility">
+  <dt><%= @model.t :facility_ids %><%= @model.tt :facility_ids %></dt>
+  <dd>
+    <%= f.hidden_field "facility_ids[]", value: "", class: "hidden-ids" %>
+    <%= link_to t("gws.apis.facilities.index"), gws_apis_facilities_path, class: "ajax-box" %>
+  </dd>
+  <dd>
+    <table class="index ajax-selected">
+      <thead><tr><th class="name"><%= Gws::User.t :name %></th><th class="deselect"></th></tr></thead>
+      <tbody>
+        <% @item.facilities.each do |item| %>
+        <tr data-id="<%= item.id %>">
+          <td><%= f.hidden_field "facility_ids[]", value: item.id %> <%= item.name %></td>
+          <td><%= link_to t("ss.buttons.delete"), "#", class: "deselect btn" %></td>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </dd>
+</dl>

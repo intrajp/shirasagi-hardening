@@ -1,0 +1,19 @@
+# gws
+
+production: &production
+  # Disable GWS.
+  disable: false
+
+  # StyleSheets on gws pages.
+  stylesheets: ["gws/style"]
+
+  # JavaScripts on gws pages.
+  javascripts: ["gws/script"]
+
+test:
+  <<: *production
+  disable: false
+
+development:
+  <<: *production
+  disable: false

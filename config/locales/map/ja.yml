@@ -1,0 +1,49 @@
+ja:
+  map:
+    map: 地図
+    page: 地図記事
+    loc: 位置
+    zoom: ズーム
+    search: 地名を検索
+    setting: マップ設定
+    markers: マーカー設定
+    clicked: クリック座標
+    alert:
+      invalid_center: 座標を取得できませんでした。
+      invalid_location:
+        - "正しい座標をカンマ(,)区切りで入力してください。"
+        - "例）33.8957612,133.6806607"
+    buttons:
+      set_marker: マーカーの設置
+      add_marker: マーカーを追加する
+      clear_marker: 削除
+    confirm:
+      delete_marker: マーカーを削除してよろしいですか？
+      find_exif: 画像に位置情報が含まれています。位置情報を地図に設定しますか？
+
+  modules:
+    map: 地図
+    addons:
+      map/page: 地図
+
+  mongoid:
+    attributes:
+      map/addon/page:
+        map_loc: 緯度,経度
+        map_zoom: 縮尺
+        marker_name: マーカー名
+        marker_text: 説明
+        marker_loc: 座標
+        marker_link: リンク
+
+  tooltip:
+    map/addon/page:
+      map_points:
+        - "地図内に表示するマーカーを設定します。"
+        - "地図をクリックし「マーカーの設定」を選択することでマーカーを地図上に配置します。"
+        -
+        - "座標を直接入力しマーカーを設定する場合は、「座標」入力欄にカンマ(,)区切りで緯度経度を入力します。"
+        - "例:33.8957612,133.6806607"
+        -
+        - "マーカー名、説明にはマーカーの吹き出しテキストを入力します。"
+        - "「マーカーを追加する」を選択することで複数のマーカーを設定することが可能です。"

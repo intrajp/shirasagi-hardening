@@ -1,0 +1,43 @@
+<nav class="mod-navi">
+  <h2><%= t "gws.site_config" %></h2>
+  <h3><%= link_to t('gws.site_info'), gws_site_path %></h3>
+
+  <% if Gws::Group.allowed?(:read, @cur_user, site: @cur_site) %>
+    <h3><%= link_to t('mongoid.models.ss/group'), gws_groups_path %></h3>
+  <% end %>
+  <% if Gws::CustomGroup.allowed?(:read, @cur_user, site: @cur_site) %>
+    <h3><%= link_to t('mongoid.models.gws/custom_group'), gws_custom_groups_path %></h3>
+  <% end %>
+  <% if Gws::User.allowed?(:read, @cur_user, site: @cur_site) %>
+    <h3><%= link_to t('mongoid.models.ss/user'), gws_users_path %></h3>
+  <% end %>
+  <% if Gws::UserTitle.allowed?(:read, @cur_user, site: @cur_site) %>
+    <h3><%= link_to t('mongoid.models.ss/user_title'), gws_user_titles_path %></h3>
+  <% end %>
+  <% if Gws::Role.allowed?(:read, @cur_user, site: @cur_site) %>
+    <h3><%= link_to t('mongoid.models.gws/role'), gws_roles_path %></h3>
+  <% end %>
+  <% if Gws::Workflow::Route.allowed?(:read, @cur_user, site: @cur_site) %>
+    <h3><%= link_to t('workflow.name'), gws_workflow_routes_path %></h3>
+  <% end %>
+  <% if Gws::Notice.allowed?(:read, @cur_user, site: @cur_site) %>
+    <h3><%= link_to t('mongoid.models.gws/notice'), gws_notices_path %></h3>
+  <% end %>
+  <% if Gws::Link.allowed?(:read, @cur_user, site: @cur_site) %>
+    <h3><%= link_to t('mongoid.models.gws/link'), gws_links_path %></h3>
+  <% end %>
+
+  <% Gws::GroupSetting.plugins.each do |mod, url_lazy| %>
+    <% if mod.allowed?(:read, @cur_user, site: @cur_site) %>
+      <h3><%= link_to mod.human_name, instance_exec(&url_lazy) %></h3>
+    <% end %>
+  <% end %>
+
+  <% if Gws::History.allowed?(:read, @cur_user, site: @cur_site) %>
+    <h3><%= link_to t('mongoid.models.gws/history'), gws_histories_path %></h3>
+  <% end %>
+
+  <% if Gws::Job::Log.allowed?(:read, @cur_user, site: @cur_site) %>
+    <h3><%= link_to t('mongoid.models.gws/job/log'), gws_job_logs_path %></h3>
+  <% end %>
+</nav>

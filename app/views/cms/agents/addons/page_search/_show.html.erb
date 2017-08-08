@@ -1,0 +1,55 @@
+<dl class="see mod-cms-page-search">
+  <dt><%= @model.t :search_name %></dt>
+  <dd><%= @item.search_name %></dd>
+
+  <dt><%= @model.t :search_filename %></dt>
+  <dd><%= @item.search_filename %></dd>
+
+  <dt><%= @model.t :search_keyword %></dt>
+  <dd><%= @item.search_keyword %></dd>
+
+  <dt><%= @model.t :search_category_ids %></dt>
+  <dd><%= tryb { @item.search_categories.pluck(:name).join(",") } %></dd>
+
+  <dt><%= @model.t :search_group_ids %></dt>
+  <dd><%= tryb { @item.search_groups.pluck(:name).join(",") } %></dd>
+
+  <dt><%= @model.t :search_user_ids %></dt>
+  <dd><%= tryb { @item.search_users.pluck(:name).join(",") } %></dd>
+
+  <dt><%= @model.t :search_node_ids %></dt>
+  <dd><%= tryb { @item.search_nodes.pluck(:name).join(",") } %></dd>
+
+  <dt><%= @model.t :search_routes %></dt>
+  <dd><%= tryb { @item.search_routes.select(&:present?).map { |route| "#{I18n.t("modules.#{route.sub(/\/.*/, '')}")}/#{I18n.t("mongoid.models.#{route}")}" }.join(",") } %></dd>
+
+  <dt><%= @model.t :search_released %></dt>
+  <dd>
+    <% if @item.search_released_start || @item.search_released_close %>
+      <%= @item.search_released_start %>
+      -
+      <%= @item.search_released_close %>
+    <% end %>
+  </dd>
+
+  <dt><%= @model.t :search_updated %></dt>
+  <dd>
+    <% if @item.search_updated_start || @item.search_updated_close %>
+      <%= @item.search_updated_start %>
+      -
+      <%= @item.search_updated_close %>
+    <% end %>
+  </dd>
+
+  <dt><%= @model.t :search_state %></dt>
+  <dd><%= @item.label :search_state %></dd>
+
+  <dt><%= @model.t :search_first_released %></dt>
+  <dd><%= @item.label :search_first_released %></dd>
+
+  <dt><%= @model.t :search_approver_state %></dt>
+  <dd><%= @item.label :search_approver_state %></dd>
+
+  <dt><%= @model.t :search_sort %></dt>
+  <dd><%= @item.label :search_sort %></dd>
+</dl>

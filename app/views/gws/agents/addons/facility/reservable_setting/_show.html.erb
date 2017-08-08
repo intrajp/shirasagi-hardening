@@ -1,0 +1,15 @@
+<%= jquery do %>
+  <% if !@item.reservable_setting_present? %>
+  SS_AddonTabs.hide(".gws-addon-facility-reservable-setting");
+  <% end %>
+<% end %>
+
+<div class="gws-addon-facility-reservable-setting">
+  <dl class="see">
+    <dt><%= @model.t :reservable_group_ids %></dt>
+    <dd><%=br @item.reservable_group_names.join("\n") %></dd>
+
+    <dt><%= @model.t :reservable_member_ids %></dt>
+    <dd><%=br @item.reservable_member_names.join("\n") %></dd>
+  </dl>
+</div>

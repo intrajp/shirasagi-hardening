@@ -1,0 +1,26 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
+
+<head>
+<meta charset="UTF-8" />
+<title><%= @window_name %></title>
+<%= stylesheet_link_tag "cms/public" %>
+<%= javascript_include_tag "cms/public" %>
+<% controller.stylesheets.each do |path| %>
+  <%= stylesheet_link_tag path, media: "all" %>
+<% end %>
+<% controller.javascripts.each do |path| %>
+  <%= javascript_include_tag path %>
+<% end %>
+<%= javascript_tag do %>
+  SS.config = <%= raw controller.javascript_configs.to_json %>;
+<% end %>
+<%== render_layout_parts(@cur_layout.head) %>
+<%= render file: "layouts/cms/_opengraph" %>
+<%= render file: "layouts/cms/_twitter_card" %>
+<%= csrf_meta_tags if @csrf_token != false %>
+</head>
+
+<%= yield %>
+
+</html>

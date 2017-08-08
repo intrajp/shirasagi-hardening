@@ -1,0 +1,23 @@
+<% return unless @cur_site.opengraph_enabled? %>
+
+<% if @cur_site.facebook_app_id.present? %>
+<meta property="fb:app_id" content="<%= @cur_site.facebook_app_id %>" />
+<% end %>
+<% if @cur_site.facebook_page_url.present? %>
+<meta property="article:author" content="<%= @cur_site.facebook_page_url %>" />
+<meta property="article:publisher" content="<%= @cur_site.facebook_page_url %>" />
+<% end %>
+<% %w(og:type og:url og:site_name og:title og:description).each do |key| %>
+<% v = controller.opengraph(key).first %>
+<% if v.present? %>
+<meta property="<%= key %>" content="<%= v %>" />
+<% end %>
+<% end %>
+<% controller.opengraph("og:image").each do |url| %>
+<% next if url.blank? %>
+<meta property="og:image" content="<%= url %>" />
+<% end %>
+<% controller.opengraph("og:video").each do |url| %>
+<% next if url.blank? %>
+<meta property="og:video" content="<%= url %>" />
+<% end %>

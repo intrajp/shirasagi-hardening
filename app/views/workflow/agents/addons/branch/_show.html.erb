@@ -1,0 +1,56 @@
+<% return "" unless @item.allowed?(:edit, @cur_user, site: @cur_site, node: @cur_node)  %>
+
+<%= coffee do %>
+$ ->
+  toggleCreateBranchButton = ()->
+    dt = $("dl.branch .create-branch").closest("dt")
+    result = dt.next("dl.branch .result")
+    if $(".branches .name").length
+      dt.hide()
+      dt.next("dt").show()
+      result.show()
+    else
+      dt.show()
+      dt.next("dt").hide()
+      result.hide()
+
+  toggleCreateBranchButton()
+  $(".create-branch").on "click", ->
+    path = "<%= branch_create_workflow_page_path(id: @item.id) %>"
+    $.ajax
+      type: "POST",
+      url: path
+      beforeSend: ->
+        $(".result").show()
+        $(".result").html(SS.loading)
+      success: (data)->
+        $(".result").html(data)
+        $(".result a").removeClass()
+        toggleCreateBranchButton()
+      error: (data, status) ->
+        alert(["== Error =="].concat(data.responseJSON).join("\n"))
+<% end %>
+
+<%
+  @items = @item.branch? ? [@item.master] : @item.branches
+%>
+<dl class="see branch">
+  <% if @item.branch? %>
+    <dt class="wide"><%= t("workflow.branch_message") %></dt>
+    <dd></dd>
+    <dt><%= t("workflow.master_page") %></dt>
+  <% else %>
+    <% if @items.present? %>
+      <dt class="wide"><%= t("workflow.master_message") %></dt>
+      <dd></dd>
+    <% else %>
+      <dt class="wide">
+        <%= button_tag t("workflow.create_branch"), class: "create-branch btn" %>
+      </dt>
+    <% end %>
+    <dt><%= t("workflow.branch_page") %></dt>
+  <% end %>
+  <dd class="result">
+    <%= render file: "workflow/pages/branch" if @items.present? %>
+  </dd>
+</dl>

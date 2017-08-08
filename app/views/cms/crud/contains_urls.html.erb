@@ -1,0 +1,74 @@
+<div class="addon-views">
+  <div class="addon-view" id="addon-basic">
+    <div class="addon-head"><h2><%= t "ss.basic_info"%></h2></div>
+    <div class="addon-body">
+      <dl class="see">
+        <dt><%= @model.t :name %></dt>
+        <dd><%= @item.send :name %></dd>
+
+        <dt><%= @model.t :basename %></dt>
+        <dd><%= @item.send :basename %></dd>
+        <dd><%= @item.public? ? link_to(@item.full_url, @item.full_url, target: "_blank") : @item.full_url %></dd>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<div class="index">
+  <div class="list-head">
+    <% if @contains_urls.present? %>
+      <%= t("cms.confirm.contains_urls_exists")%>
+    <% else %>
+      <%= t("cms.confirm.contains_urls_not_found")%>
+    <% end %>
+  </div>
+
+  <ul class="list-items">
+    <% @contains_urls.each do |item| %>
+      <li class="list-item">
+
+        <% if item.allowed?(:read, @cur_user, site: @cur_site, node: item.parent) %>
+        <nav class="tap-menu">
+          <%= link_to t("cms.content"), item.private_show_path %>
+          <%= link_to t('ss.links.view_site'), item.full_url, target: :_blank %>
+          <% if @cur_site.mobile_enabled? %>
+            <%= link_to t('ss.links.pc_preview'), cms_preview_path(path: item.preview_path), target: :_blank %>
+            <%= link_to(t('ss.links.mobile_preview'), cms_mobile_preview_path(path: item.preview_path), target: :_blank) %>
+          <% else %>
+            <%= link_to t('ss.links.preview'), cms_preview_path(path: item.preview_path), target: :_blank %>
+          <% end %>
+        </nav>
+        <% end %>
+
+        <div class="info">
+          <% if item.allowed?(:read, @cur_user, site: @cur_site, node: item.parent) %>
+            <%= link_to item.name, item.private_show_path, class: "title" %>
+          <% else %>
+            <%= item.name %>
+          <% end %>
+
+          <div class="meta">
+            <span class="id">#<%= item.id %></span>
+            <span class="datetime"><%= item.updated.strftime("%Y/%m/%d %H:%M") %></span>
+            <span class="filename"><%= item.filename %></span>
+            <span class="route"><%= t "modules.#{item.route.sub(/\/.*/, '')}" %></span>
+            <% if item.user %>
+              <span class="user"><%= t item.user.name %></span>
+            <% end %>
+            <span class="state">
+              <%= t("ss.state.#{item.status}") %>
+              <%
+                term = []
+                term << "開始:" + item.release_date.strftime("%Y/%m/%d %H:%M") if item.release_date
+                term << "終了:" + item.close_date.strftime("%Y/%m/%d %H:%M") if item.close_date
+              %>
+              <%= "( #{term.join(", ")} )" if term.present? %>
+            </span>
+          </div>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+</div>
+
+<%= paginate @results if @results.try(:current_page) %>

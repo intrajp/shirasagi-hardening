@@ -1,0 +1,9 @@
+<% return "" if @item.event_dates.blank? %>
+
+<dl class="see mod-event">
+  <dt><%= @model.t :event_name %></dt>
+  <dd class="event-name"><%= @item.send :event_name %></dd>
+
+  <dt><%= @model.t :event_dates %></dt>
+  <dd class="event-dates"><%= raw @item.dates_to_html(:long) %></dd>
+</dl>

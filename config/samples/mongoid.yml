@@ -1,0 +1,33 @@
+# MongoDB Configuration
+#
+# if you want to know about detail configuration,
+# see: https://docs.mongodb.org/ecosystem/tutorial/mongoid-installation/#mongoid-configuration
+production:
+  clients:
+    default:
+      database: ss
+      hosts:
+        - localhost:27017
+
+test:
+  clients:
+    default:
+      database: ss_test
+      hosts:
+        - localhost:27017
+      options:
+        read:
+          mode: :primary
+
+development:
+  clients:
+    default:
+      database: ss
+      hosts:
+        - localhost:27017
+      options:
+        #user: username
+        #password: password
+
+  # Configure Mongoid specific options. (optional)
+  options:

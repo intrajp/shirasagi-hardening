@@ -1,0 +1,17 @@
+<% @tap_menu = proc do |item| %>
+  <%= link_to t('ss.links.show'), action: :show, id: item %>
+  <%= link_to t('ss.links.edit'), action: :edit, id: item %>
+  <%= link_to t('ss.links.delete'), action: :delete, id: item %>
+<% end %>
+
+<% @index_title = proc do |item| %>
+  <%= link_to("#{item.vocab.prefix}:#{item.name}", action: :show, id: item, class: "title") %>
+<% end %>
+
+<% @index_meta = proc do |item| %>
+  <span class="id">#<%= item.id %></span>
+  <span class="datetime"><%= item.updated.strftime("%Y/%m/%d %H:%M") %></span>
+  <p class="comments"><%= item.comments.try(:preferred_value) %></p>
+<% end %>
+
+<%= render file: "cms/crud/index" %>

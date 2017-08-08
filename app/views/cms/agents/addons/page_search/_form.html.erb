@@ -1,0 +1,165 @@
+<dl class="see mod-cms-page-search">
+  <dt><%= @model.t :search_name %><%= @model.tt :search_name %></dt>
+  <dd><%= f.text_field :search_name, class: "search-name" %></dd>
+
+  <dt><%= @model.t :search_filename %><%= @model.tt :search_filename %></dt>
+  <dd><%= f.text_field :search_filename, class: "search-filename" %></dd>
+
+  <dt><%= @model.t :search_keyword %><%= @model.tt :search_keyword %></dt>
+  <dd><%= f.text_field :search_keyword, class: "search-name" %></dd>
+
+  <dt><%= @model.t :search_category_ids %><%= @model.tt :search_category_ids %></dt>
+  <dd>
+    <%= hidden_field_tag "#{f.object_name}[search_category_ids][]", nil, class: "hidden-ids" %>
+    <%= link_to t("cms.apis.categories.index"), cms_apis_categories_path, class: "btn ajax-box" %>
+  </dd>
+  <dd>
+    <table class="index ajax-selected">
+      <thead>
+      <tr>
+        <th class="name"><%= @model.t :search_category_ids %></th>
+        <th></th>
+      </tr>
+      </thead>
+      <tbody>
+      <% @item.search_categories.each do |item| %>
+        <tr data-id="<%= item.id %>">
+          <td><%= hidden_field_tag "#{f.object_name}[search_category_ids][]", item.id %> <%= item.name %></td>
+          <td><%= link_to t("ss.buttons.delete"), "#", class: "deselect btn" %></td>
+        </tr>
+      <% end %>
+      </tbody>
+    </table>
+  </dd>
+</dl>
+
+<dl class="see mod-cms-page-search">
+  <dt><%= @model.t :search_group_ids %><%= @model.tt :search_group_ids %></dt>
+  <dd>
+    <%= hidden_field_tag "#{f.object_name}[search_group_ids][]", nil, class: "hidden-ids" %>
+    <%= link_to t("ss.apis.groups.index"), cms_apis_groups_path, class: "btn ajax-box" %>
+  </dd>
+  <dd>
+    <table class="index ajax-selected">
+      <thead>
+      <tr>
+        <th class="name"><%= @model.t :search_group_ids %></th>
+        <th></th>
+      </tr>
+      </thead>
+      <tbody>
+      <% @item.search_groups.each do |item| %>
+        <tr data-id="<%= item.id %>">
+          <td><%= hidden_field_tag "#{f.object_name}[search_group_ids][]", item.id %> <%= item.name %></td>
+          <td><%= link_to t("ss.buttons.delete"), "#", class: "deselect btn" %></td>
+        </tr>
+      <% end %>
+      </tbody>
+    </table>
+  </dd>
+</dl>
+
+<dl class="see mod-cms-page-search">
+  <dt><%= @model.t :search_user_ids %><%= @model.tt :search_user_ids %></dt>
+  <dd>
+    <%= hidden_field_tag "item[search_user_ids][]", nil, class: "hidden-ids" %>
+    <%= link_to t("cms.apis.users.index"), cms_apis_users_path, class: "btn ajax-box" %>
+  </dd>
+  <dd>
+    <table class="index ajax-selected">
+      <thead>
+      <tr>
+        <th class="name"><%= @model.t :search_user_ids %></th>
+        <th></th>
+      </tr>
+      </thead>
+      <tbody>
+      <% @item.search_users.each do |item| %>
+        <tr data-id="<%= item.id %>">
+          <td><%= hidden_field_tag "item[search_user_ids][]", item.id %> <%= item.name %></td>
+          <td><%= link_to t("ss.buttons.delete"), "#", class: "deselect btn" %></td>
+        </tr>
+      <% end %>
+      </tbody>
+    </table>
+  </dd>
+</dl>
+
+<dl class="see mod-cms-page-search">
+  <dt><%= @model.t :search_node_ids %><%= @model.tt :search_node_ids %></dt>
+  <dd>
+    <%= hidden_field_tag "#{f.object_name}[search_node_ids][]", nil, class: "hidden-ids" %>
+    <%= link_to t("cms.apis.nodes.index"), cms_apis_nodes_path, class: "btn ajax-box" %>
+  </dd>
+  <dd>
+    <table class="index ajax-selected">
+      <thead>
+      <tr>
+        <th class="name"><%= @model.t :search_node_ids %></th>
+        <th></th>
+      </tr>
+      </thead>
+      <tbody>
+      <% @item.search_nodes.each do |item| %>
+          <tr data-id="<%= item.id %>">
+            <td><%= hidden_field_tag "#{f.object_name}[search_node_ids][]", item.id %> <%= item.name %></td>
+            <td><%= link_to t("ss.buttons.delete"), "#", class: "deselect btn" %></td>
+          </tr>
+      <% end %>
+      </tbody>
+    </table>
+  </dd>
+</dl>
+
+<dl class="see mod-cms-page-search">
+  <dt><%= @model.t :search_routes %><%= @model.tt :search_routes %></dt>
+  <dd>
+    <%= hidden_field_tag "#{f.object_name}[search_routes][]", nil, class: "hidden-ids" %>
+    <%= link_to t("cms.apis.pages_routes.index"), cms_apis_pages_routes_path, class: "btn ajax-box" %>
+  </dd>
+  <dd>
+    <table class="index ajax-selected">
+      <thead>
+      <tr>
+        <th class="name"><%= @model.t :search_routes %></th>
+        <th></th>
+      </tr>
+      </thead>
+      <tbody>
+      <% @item.search_routes.each do |route| %>
+        <% next if route.blank? %>
+        <tr data-id="<%= route %>">
+          <td><%= hidden_field_tag "#{f.object_name}[search_routes][]", route %> <%= I18n.t("mongoid.models.#{route}") %></td>
+          <td><%= link_to t("ss.buttons.delete"), "#", class: "deselect btn" %></td>
+        </tr>
+      <% end %>
+      </tbody>
+    </table>
+  </dd>
+
+  <dt><%= @model.t :search_released %><%= @model.tt :search_released %></dt>
+  <dd>
+    <%= f.text_field :search_released_start, class: "datetime js-datetime search-released-start" %>
+    <%= "-" %>
+    <%= f.text_field :search_released_close, class: "datetime js-datetime search-released-close" %>
+  </dd>
+
+  <dt><%= @model.t :search_updated %><%= @model.tt :search_updated %></dt>
+  <dd>
+    <%= f.text_field :search_updated_start, class: "datetime js-datetime search-updated-start" %>
+    <%= "-" %>
+    <%= f.text_field :search_updated_close, class: "datetime js-datetime search-updated-close" %>
+  </dd>
+
+  <dt><%= @model.t :search_state %><%= @model.tt :search_state %></dt>
+  <dd><%= f.select :search_state, @item.search_state_options, include_blank: true %></dd>
+
+  <dt><%= @model.t :search_first_released %><%= @model.tt :search_first_released %></dt>
+  <dd><%= f.select :search_first_released, @item.search_first_released_options, include_blank: true %></dd>
+
+  <dt><%= @model.t :search_approver_state %><%= @model.tt :search_approver_state %></dt>
+  <dd><%= f.select :search_approver_state, @item.search_approver_state_options, include_blank: true %></dd>
+
+  <dt><%= @model.t :search_sort %><%= @model.tt :search_sort %></dt>
+  <dd><%= f.select :search_sort, @item.search_sort_options, include_blank: true %></dd>
+</dl>

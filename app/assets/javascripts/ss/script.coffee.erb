@@ -1,0 +1,247 @@
+//= require jquery
+//= require jquery_ujs
+//= require jquery-ui/sortable
+//= require js.cookie
+//= require jquery.form
+//= require jquery.datetimepicker
+//= require jquery.multi-select
+//= require jquery.colorbox-min.js
+//= require jquery.minicolors
+//= require jquery.autosize
+//= require marked
+//= require_self
+//= require ss/lib/form
+//= require ss/lib/module
+//= require ss/lib/login
+//= require ss/lib/addon_tabs
+//= require ss/lib/addon/markdown
+//= require ss/lib/list_ui
+//= require ss/lib/tree_ui
+//= require ss/lib/mobile
+//= require ss/lib/search_ui
+//= require ss/lib/tooltips
+//= require ss/lib/dropdown
+//= require ss/lib/clipboard
+//= require ss/lib/color
+//= require sns/lib/message
+//= require cms/lib/editor
+//= require cms/lib/form
+//= require cms/lib/edit_lock
+//= require cms/lib/source_cleaner
+//= require event/lib/form
+//= require map/googlemaps/map
+//= require map/googlemaps/form
+//= require map/googlemaps/facility/search
+//= require map/googlemaps/member/photo/form
+//= require map/openlayers/map
+//= require map/openlayers/form
+//= require map/openlayers/facility/search
+//= require map/openlayers/member/photo/form
+//= require webmail/lib/mail
+
+##
+#  $(".js-date").datetimepicker { lang: "ja", timepicker: false, format: "Y/m/d" }
+##
+
+$ ->
+  $.ajaxSetup
+    # prevent caching ajax response. see #596.
+    cache: false
+    global: true
+    # headers: { 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content') }
+
+  SS.render()
+
+  # head
+  if $(window).width() >= 800 && 0
+    menu = $("#head .pulldown-menu")
+    link = menu.find("a")
+    menu.each ->
+      link.not(".current").hide()
+      link.filter(".current").prependTo(menu).click ->
+        link.not(".current").slideToggle("fast")
+        return false
+
+  # navi
+  path = location.pathname + "/"
+  $("#navi .main-navi a, #navi .mod-navi a").each ->
+    menu = $(this)
+    menu.addClass("current") if path.match(new RegExp('^' + menu.attr('href') + '(\/|$)'))
+
+  # dropdown
+  $(".dropdown").click (e) ->
+    $(".dropdown").not($(e.target).closest('.dropdown').get(0)).each ->
+      $(this).removeClass('active')
+      $(this).find('.dropdown-menu').removeClass('active')
+    $(this).toggleClass('active')
+    $(this).find('.dropdown-menu').toggleClass('active')
+    e.stopPropagation()
+  $(document).click (e) ->
+    $(".dropdown").removeClass('active')
+    $(".dropdown-menu").removeClass('active')
+
+  # datetimepicker
+  $.datetimepicker.setLocale('ja');
+  if ($.support.opacity)
+    $(".js-date").datetimepicker
+      timepicker: false
+      format:'Y/m/d'
+      closeOnDateSelect: true
+      scrollInput: false
+    $(".js-datetime").datetimepicker
+      roundTime: 'ceil'
+      step: 30
+
+  SS_ListUI.render("table.index")
+  SS_Mobile.render()
+  SS_AddonTabs.render()
+  SS_Tooltips.render(".tooltip")
+  SS_SearchUI.render()
+  SS_Color.render()
+
+class @SS
+  @loading = '<img style="vertical-align:middle" src="/assets/img/loading.gif" alt="loading.." border="0" widtth="16" height="11" />'
+
+  @config = {}
+
+  @disableClick: (el)->
+    return false if el.data('clicked')
+    el.data('clicked', true)
+    return true
+
+  @render:(box = null) ->
+    if box
+      @renderInBox(box)
+    else
+      @renderNotInBox()
+
+    # default
+    box = $(document)
+
+    # external links
+    box.find("a[href^=http]").each ->
+      $(this).addClass("external")
+
+    # ajax to (color)box
+    box.find(".ajax-box").each ->
+      elem = $(this)
+      return true if elem.hasClass("cboxElement")
+      if !elem.attr("target") && !elem.data("target")
+        elem.colorbox({ fixed: true, width: "90%", height: "90%" })
+
+  @renderNotInBox: ->
+    SS_Login.render()
+
+  @renderInBox:(box) ->
+    anchorCallback = ()->
+      $("#cboxLoadedContent a").each ->
+        elem = $(this)
+        elem.addClass("cboxElement")
+        if !elem.attr("target") && !elem.data("target")
+          elem.colorbox({ fixed: true, width: "90%", height: "90%", onComplete: anchorCallback })
+
+    $(box).find("a").each ->
+      elem = $(this)
+      if !elem.attr("target") && !elem.data("target")
+        elem.colorbox({ fixed: true, width: "90%", height: "90%", onComplete: anchorCallback })
+
+  @ajaxForm:(elem, params = {}) ->
+    elem = $(elem)
+    defaults = {
+      url: elem.attr("action") + ".json"
+      dataType: "json"
+      success: ->
+        #
+      error: (data, status) ->
+        alert(["== Error =="].concat(data.responseJSON).join("\n"));
+    }
+    elem.on "submit", (e) ->
+      $(this).ajaxSubmit $.extend(true, defaults, params)
+      e.preventDefault();
+
+  @ajax:(elem, params = {}) ->
+    $(elem).click (e) ->
+      self = $(this)
+      defaults = {
+        url: self.attr("href")
+        beforeSend: ->
+          self.html SS.loading
+        success: ->
+          console.log "success"
+        error: (data, status) ->
+          alert("== Error ==");
+      }
+      $.ajax $.extend(true, defaults, params)
+      e.preventDefault();
+      return false
+
+  @ajaxDelete:(elem, params = {}) ->
+    $(elem).click (e) ->
+      return false if !confirm("<%= I18n.t "ss.confirm.delete" %>")
+      self = $(this)
+      defaults = {
+        type: "DELETE",
+        data: "_method=delete",
+        url: self.attr("href") + ".json"
+        dataType: "json"
+        beforeSend: ->
+          self.html SS.loading
+        success: ->
+          $(self.data("remove")).remove() if self.data("remove")
+        error: (data, status) ->
+          alert(["== Error =="].concat(data.responseJSON).join("\n"));
+      }
+      $.ajax $.extend(true, defaults, params)
+      e.preventDefault();
+      return false
+
+  @notice: (message) ->
+    notice = $('#notice')
+    if !notice.hasClass('js-notice')
+      notice.addClass('js-notice').click ->
+        notice.slideUp('normal')
+    notice.find('.wrap').html(message)
+    notice.slideDown('normal')
+    return setTimeout (-> $('#notice').slideUp('normal')), 1800
+
+  @confirmUnloading: ->
+    $("input[type=text],textarea,select").change ->
+      $(window).on "beforeunload", ->
+        return "<%= I18n.t 'ss.confirm.unload' %>"
+    $("input[type=submit]").click ->
+      $(window).off "beforeunload"
+
+  @randomPassword: (length = 8) ->
+    chars = 'abcdefghijkmnopqrstuvwxyz!@#$%&-+ABCDEFGHIJKLMNOP234567890'
+    pass = ''
+    for i in [0..length]
+      i = Math.floor(Math.random() * chars.length)
+      pass += chars.charAt(i)
+    return pass
+
+  @fileCheck: ->
+    $('#item_files').change ->
+      form = $(this).val()
+      unless form
+        $(".js-uploader-alert-message").hide()
+        return
+      uri = location.pathname.split("/")
+      $.ajax
+        type: "get"
+        url: uri.join("/")
+        dataType: "json"
+        data:
+          do: "check"
+          item_files: form
+        success: (data) ->
+          if data["message"]
+            $(".js-uploader-alert-message").html(data["message"])
+            $(".js-uploader-alert-message").show()
+          else
+            $(".js-uploader-alert-message").hide()
+        error: (xhr, status) ->
+          try
+            errors = $.parseJSON(xhr.responseText)
+            alert(["== Error =="].concat(errors).join("\n"));
+          catch
+            alert(["== Error =="].concat(xhr["statusText"]).join("\n"));

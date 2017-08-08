@@ -1,0 +1,44 @@
+<%= jquery do %>
+SS_SearchUI.modal();
+SS_TreeUI.render(".index.groups");
+<% end %>
+
+<div class="search-ui-form">
+<%= form_for :s, url: { action: :index }, html: { method: "GET", class: :search } do |f| %>
+  <%= f.text_field :name, value: params[:s].try(:[], :name) %>
+  <%= f.submit  t("ss.apis.groups.search"), class: :btn %>
+<% end %>
+</div>
+
+<table class="index groups">
+  <thead class="list-head">
+    <tr>
+      <% if @multi %>
+      <th class="checkbox"><input type="checkbox" /></th>
+      <% end %>
+      <th class="name"><%= @model.t :name %></th>
+    </tr>
+  </thead>
+  <tbody class="items">
+    <% @items.each do |item| %>
+      <% depth   = @search_params ? "" : %( data-depth=#{item.depth}) %>
+      <% name    = @search_params ? item.name : item.trailing_name %>
+      <tr data-id="<%= item.id %>" class="list-item" <%= depth %>>
+        <% if @multi %>
+        <td class="checkbox">
+          <input type="checkbox" name="ids[]" value="<%= item.id %>" />
+        </td>
+        <% end %>
+        <td class="expandable">
+          <%= link_to name, "#", class: @multi ? "select-item" : "select-single-item" %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<div class="search-ui-select">
+  <%= button_tag t("ss.apis.groups.select"), { type: :button, class: "select-items btn" } %>
+</div>
+
+<%= paginate @items if @items.try(:current_page) %>

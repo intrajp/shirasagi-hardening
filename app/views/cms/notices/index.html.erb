@@ -1,0 +1,19 @@
+<% @index_meta = proc do |item| %>
+  <span class="id">#<%= item.id %></span>
+  <span class="datetime"><%= item.updated.strftime("%Y/%m/%d %H:%M") %></span>
+
+  <% if attr = item.label(:notice_severity).presence %>
+    <span><%= attr %></span>
+  <% end %>
+
+  <% if item.try(:state) %>
+    <span class="state">
+      <%= t "ss.state.#{item.state}" %>
+      <% if item.state == "public" %>
+        (<%= item.released.strftime("%Y/%m/%d %H:%M") %>)
+      <% end %>
+    </span>
+  <% end %>
+<% end %>
+
+<%= render file: "cms/crud/index" %>

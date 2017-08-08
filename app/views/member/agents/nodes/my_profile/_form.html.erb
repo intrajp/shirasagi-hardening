@@ -1,0 +1,150 @@
+<%= stylesheet_link_tag 'member/public', media: 'all' %>
+<%= javascript_include_tag 'member/public' %>
+<%= jquery do %>
+  $("button[name='postal-code-search']").postalCodeSearch({
+    path: "<%= "#{@cur_node.url}postal_code" %>"
+  });
+<% end %>
+
+<dl class="column name">
+  <dt>
+    <%= @model.t :name %>
+    <%= required_label %>
+  </dt>
+  <dd>
+    <%= f.text_field :name %>
+    <%= remarks :name %>
+  </dd>
+</dl>
+
+<dl class="column email">
+  <dt>
+    <%= @model.t :email %>
+    <%= required_label %>
+  </dt>
+  <dd>
+    <%= f.text_field :email %>
+    <%= remarks :email %>
+  </dd>
+</dl>
+
+<dl class="column kana">
+  <dt>
+    <%= @model.t :kana %>
+    <% if @cur_node.kana_required? %>
+    <%= required_label %>
+    <% end %>
+  </dt>
+  <dd>
+    <%= f.text_field :kana %>
+    <%= remarks :kana %>
+  </dd>
+</dl>
+
+<dl class="column">
+  <dt>
+    <%= @model.t :organization_name %>
+    <% if @cur_node.organization_name_required? %>
+    <%= required_label %>
+    <% end %>
+  </dt>
+  <dd>
+    <%= f.text_field :organization_name %>
+    <%= remarks :organization_name %>
+  </dd>
+</dl>
+
+<dl class="column">
+  <dt>
+    <%= @model.t :job %>
+    <% if @cur_node.job_required? %>
+    <%= required_label %>
+    <% end %>
+  </dt>
+  <dd>
+    <%= f.text_field :job %>
+    <%= remarks :job %>
+  </dd>
+</dl>
+
+<dl class="column">
+  <dt>
+    <%= @model.t :tel %>
+    <% if @cur_node.tel_required? %>
+    <%= required_label %>
+    <% end %>
+  </dt>
+  <dd>
+    <%= f.text_field :tel %>
+    <%= remarks :tel %>
+  </dd>
+</dl>
+
+<dl class="colum postal-code">
+  <dt>
+    <%= @model.t :postal_code %>
+    <% if @cur_node.postal_code_required? %>
+    <%= required_label %>
+    <% end %>
+  </dt>
+  <dd>
+    <%= f.text_field :postal_code %>
+    <%= f.button t('member.buttons.address_search'), name: 'postal-code-search', type: :button %>
+    <span class="postal-code-search-error"></span>
+    <%= remarks :postal_code %>
+  </dd>
+</dl>
+
+<dl class="column">
+  <dt>
+    <%= @model.t :addr %>
+    <% if @cur_node.addr_required? %>
+    <%= required_label %>
+    <% end %>
+  </dt>
+  <dd>
+    <%= f.text_field :addr %>
+    <%= remarks :addr %>
+  </dd>
+</dl>
+
+<dl class="column">
+  <dt>
+    <%= @model.t :sex %>
+    <% if @cur_node.sex_required? %>
+    <%= required_label %>
+    <% end %>
+  </dt>
+  <dd>
+    <% @item.sex_options.each do |text, val| %>
+      <%= label_tag("item_sex_#{val}", class: val) do %>
+        <%= f.radio_button :sex, val %><%= text %>
+      <% end %>
+    <% end %>
+    <%= remarks :sex %>
+  </dd>
+</dl>
+
+<dl class="column">
+  <dt>
+    <%= @model.t :birthday %>
+    <% if @cur_node.birthday_required? %>
+    <%= required_label %>
+    <% end %>
+  </dt>
+  <dd>
+    <%= f.fields_for :in_birth do |birth_f| %>
+      <% era, year, month, day = @item.parse_in_birth %>
+      <%= birth_f.select :era, @item.wareki_options, selected: era, include_blank: true %>
+      <%= birth_f.number_field :year, value: year %>
+      <%= t("datetime.prompts.year") %>
+      <%= birth_f.select :month, options_for_select((1..12).to_a, month), include_blank: true  %>
+      <%= t("datetime.prompts.month") %>
+      <%= birth_f.select :day, options_for_select((1..31).to_a, day), include_blank: true %>
+      <%= t("datetime.prompts.day") %>
+    <% end %>
+    <%= remarks :birthday %>
+  </dd>
+</dl>
+
+<%= render file: '_mail_category_form', locals: { f: f } %>

@@ -1,0 +1,20 @@
+<%= jquery do %>
+  <% if !@item.readable_setting_present? %>
+  SS_AddonTabs.hide(".gws-addon-readable-setting");
+  <% end %>
+<% end %>
+
+<div class="gws-addon-readable-setting">
+  <dl class="see">
+    <% if @item.class.readable_setting_included_custom_groups? %>
+    <dt><%= @model.t :readable_custom_group_ids %></dt>
+    <dd><%=tryb { br @item.readable_custom_group_names.join("\n") } %></dd>
+    <% end %>
+
+    <dt><%= @model.t :readable_group_ids %></dt>
+    <dd><%=br @item.readable_group_names.join("\n") %></dd>
+
+    <dt><%= @model.t :readable_member_ids %></dt>
+    <dd><%=br @item.readable_member_names.join("\n") %></dd>
+  </dl>
+</div>

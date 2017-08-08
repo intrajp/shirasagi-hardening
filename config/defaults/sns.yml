@@ -1,0 +1,21 @@
+production: &production
+  # specify which group should be logged in.
+  login_group: シラサギ市
+
+  # without csrf token ( /.mypage/remote_login )
+  remote_login: false
+
+  # Redirects the page after login.
+  logged_in_page: /.mypage
+
+  # Session Lifetime in seconds
+  session_lifetime: 1800
+
+test:
+  <<: *production
+
+development:
+  <<: *production
+
+  # Session Lifetime in seconds
+  session_lifetime: 3600

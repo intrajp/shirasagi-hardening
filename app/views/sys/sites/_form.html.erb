@@ -1,0 +1,49 @@
+<dl class="see">
+  <dt><%= @model.t :name %><%= @model.tt :name %></dt>
+  <dd><%= f.text_field :name %></dd>
+
+  <dt><%= @model.t :host %><%= @model.tt :host %></dt>
+  <dd><%= f.text_field :host %></dd>
+
+  <dt><%= @model.t :domains %><%= @model.tt :domains %></dt>
+  <dd><%= f.text_field :domains %></dd>
+
+  <dt><%= @model.t :subdir %><%= @model.tt :subdir %></dt>
+  <dd><%= f.text_field :subdir %></dd>
+
+  <dt><%= @model.t :parent_id %><%= @model.tt :parent_id %></dt>
+  <dd><%= f.select :parent_id, SS::Site.all.map { |s| [s.name, s.id] }, include_blank: true %></dd>
+
+  <dt><%= @model.t :https %><%= @model.tt :https %></dt>
+  <dd><%= f.select :https, @item.https_options %></dd>
+
+  <dt><%= @model.t :mypage_scheme %><%= @model.tt :mypage_scheme %></dt>
+  <dd><%= f.select :mypage_scheme, @item.mypage_scheme_options %></dd>
+
+  <dt><%= @model.t :mypage_domain %><%= @model.tt :mypage_domain %></dt>
+  <dd><%= f.text_field :mypage_domain %></dd>
+
+  <dt><%= @model.t :group_ids %><%= @model.tt :group_ids %></dt>
+  <dd>
+    <%= f.hidden_field "group_ids[]", value: "", class: "hidden-ids" %>
+    <%= link_to t("ss.apis.groups.index"), sys_apis_groups_path, class: "ajax-box" %>
+  </dd>
+  <dd>
+    <table class="index ajax-selected">
+      <thead>
+        <tr>
+          <th class="name"><%= Sys::Group.t :name %></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @item.groups.each do |group| %>
+          <tr data-id="<%= group.id %>">
+            <td><%= f.hidden_field "group_ids[]", value: group.id %> <%= group.name %></td>
+            <td><%= link_to t("ss.buttons.delete"), "#", class: "deselect btn" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </dd>
+</dl>

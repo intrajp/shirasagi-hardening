@@ -1,0 +1,17 @@
+<%= jquery do %>
+  SS_AddonTabs.hide(".mod-cms-release_plan");
+<% end %>
+<%
+  if @item.new_record? && @item.default_release_plan_enabled?
+    @item.release_date ||= @item.default_release_date
+    @item.close_date ||= @item.default_close_date
+  end
+%>
+
+<dl class="see mod-cms-release_plan">
+  <dt><%= @model.t :release_date %><%= @model.tt :release_date %></dt>
+  <dd><%= f.text_field :release_date, class: "datetime js-datetime", value: tryb { @item.release_date.strftime("%Y/%m/%d %H:%M") } %></dd>
+
+  <dt><%= @model.t :close_date %><%= @model.tt :close_date %></dt>
+  <dd><%= f.text_field :close_date, class: "datetime js-datetime", value: tryb { @item.close_date.strftime("%Y/%m/%d %H:%M") } %></dd>
+</dl>

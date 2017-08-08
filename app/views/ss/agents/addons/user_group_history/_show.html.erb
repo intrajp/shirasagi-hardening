@@ -1,0 +1,20 @@
+<%= jquery do %> SS_AddonTabs.hide(".ss-addon-user-group-history"); <% end %>
+
+<div class="ss-addon-user-group-history">
+  <table class="index">
+    <thead>
+      <tr>
+        <th style="width: 140px"><%= SS::UserGroupHistory.t :created %></th>
+        <th><%= SS::UserGroupHistory.t :group_ids %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @item.group_histories.each do |item| %>
+      <tr>
+        <td><%= tryb { item.created.strftime('%Y/%m/%d %H:%M') } %></td>
+        <td><%= item.group_names.join(', ').presence || '-' %></td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

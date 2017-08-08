@@ -1,0 +1,25 @@
+<%= jquery do %>
+  SS_AddonTabs.hide(".mod-ss-twitter-setting");
+<% end %>
+<dl class="see mod-ss-twitter-setting">
+  <dt><%= @model.t :twitter_card %><%= @model.tt :twitter_card %></dt>
+  <dd><%= f.select :twitter_card, @item.twitter_card_options %></dd>
+
+  <dt><%= @model.t :twitter_username %><%= @model.tt :twitter_username %></dt>
+  <dd>@ <%= f.text_field :twitter_username %></dd>
+
+  <dt><%= @model.t :twitter_default_image_url %><%= @model.tt :twitter_default_image_url %></dt>
+  <dd><%= f.text_field :twitter_default_image_url %></dd>
+
+  <dt><%= @model.t :twitter_consumer_key %><%= @model.tt :twitter_consumer_key %></dt>
+  <dd><%= f.text_field :twitter_consumer_key %></dd>
+
+  <dt><%= @model.t :twitter_consumer_secret %><%= @model.tt :twitter_consumer_secret %></dt>
+  <dd><%= f.text_field :twitter_consumer_secret %></dd>
+
+  <dt><%= @model.t :twitter_access_token %><%= @model.tt :twitter_access_token %></dt>
+  <dd><%= f.text_field :twitter_access_token %></dd>
+
+  <dt><%= @model.t :twitter_access_token_secret %><%= @model.tt :twitter_access_token_secret %></dt>
+  <dd><%= f.text_field :twitter_access_token_secret %></dd>
+</dl>

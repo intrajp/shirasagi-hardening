@@ -1,0 +1,9 @@
+<% return "" if @item.related_pages.blank? %>
+
+<dl class="see">
+  <dt><%= @model.t :related_pages %></dt>
+  <dd><%=br @item.send(:related_pages).pluck(:name).join("\n") %></dd>
+
+  <dt><%= @model.t :related_page_sort %></dt>
+  <dd><%=br @item.label :related_page_sort %></dd>
+</dl>

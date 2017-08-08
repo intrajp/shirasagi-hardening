@@ -1,0 +1,72 @@
+<%
+
+render nothing: true if @cur_part.sort_sns_share_services.blank?
+url = File.join(@cur_site.full_url, @cur_main_path)
+
+%>
+
+<div class="cms-sns_share">
+
+<% if @cur_part.sort_sns_share_services.select { |v| v =~ /fb_/ }.present? %>
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/<%= t "cms.sns_share.fb_lang" %>/sdk.js#xfbml=1&version=v2.8";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+<% end %>
+
+<% @cur_part.sort_sns_share_services.each do |service| %>
+  <% if service == "fb_like" %>
+    <div class="site fb fb-like">
+      <div class="fb-like" data-href="<%= url %>" data-layout="button_count" data-action="like"></div>
+    </div>
+
+  <% elsif service == "fb_share" %>
+    <div class="site fb fb-share">
+      <div class="fb-share-button" data-href="<%= url %>" data-layout="button_count"></div>
+    </div>
+
+  <% elsif service == "twitter" %>
+    <div class="site twitter">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-url="<%= url %>"><%= t "cms.sns_share.tweet" %></a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';
+      if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';
+      fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+    </div>
+
+  <% elsif service == "hatena" %>
+    <div class="site hatena">
+      <a href="http://b.hatena.ne.jp/entry/<%= url %>" class="hatena-bookmark-button"
+        data-hatena-bookmark-layout="standard-balloon"
+        data-hatena-bookmark-lang="ja" title="<%= t "cms.sns_share.hatena_add" %>">
+        <img src="//b.st-hatena.com/images/entry-button/button-only@2x.png"
+          alt="<%= t "cms.sns_share.hatena_add" %>" width="20" height="20" style="border: none;" /></a>
+      <script type="text/javascript" src="//b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+    </div>
+
+  <% elsif service == "google" %>
+    <div class="site google">
+      <div class="g-plusone" data-size="medium"></div>
+      <script src="https://apis.google.com/js/platform.js" async="async" defer="defer">
+        //{ lang: 'en_US' }
+      </script>
+    </div>
+
+  <% elsif service == "evernote" %>
+    <div class="site evernote">
+      <script type="text/javascript" src="//static.evernote.com/noteit.js"></script>
+      <a href="#" onclick="Evernote.doClip({ url: '<%= url %>' }); return false;">
+        <img src="//static.evernote.com/article-clipper.png" alt="Clip to Evernote" /></a>
+    </div>
+
+  <% elsif service == "line" %>
+    <div class="site line">
+      <div class="line-it-button" style="display: none;" data-type="share-a" data-lang="ja" ></div>
+      <script src="//scdn.line-apps.com/n/line_it/thirdparty/loader.min.js" async="async" defer="defer" ></script>
+    </div>
+  <% end %>
+<% end %>
+</div>
