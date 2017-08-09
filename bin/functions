@@ -2,6 +2,14 @@
 #
 # Copyright(C) Shintaro Fujiwara
 
+# creates log file in /root and logs what the script do 
+
+mklog()
+{
+    sync >/dev/null 2>&1
+    exec > >(tee $LOGFILE) 2>&1
+}
+
 # error message 
 
 err_msg () {
@@ -27,4 +35,25 @@ check_SELinux_is_enabled () {
     local myresult=""
     myresult=$(getenforce)
     echo "${myresult}"
+}
+
+# check rpms to be installed
+
+check_rpms()
+{
+    local num=1
+    RPMS_TO_BE_INSTALLED=()
+    while [ $num -le $# ]; do
+        local rpm_lacked=""
+        local rpm_name=""
+        rpm_name=$(eval echo "\$$num")
+        #echo $rpm_name
+        `rpm -q "${rpm_name}" >/dev/null`
+        if [ $? -ne 0 ]; then
+            rpm_lacked=$(echo "$rpm_name")
+            RPMS_TO_BE_INSTALLED=("${RPMS_TO_BE_INSTALLED[@]}" "${rpm_lacked}")
+        fi
+        shift
+    done
+    echo "${RPMS_TO_BE_INSTALLED[@]}"
 }

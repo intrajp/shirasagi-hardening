@@ -2,9 +2,14 @@
 #
 # Copyright(C) Shintaro Fujiwara
 
-#### including functions
+#### including global variables and functions
+
 . .config 
 . functions
+
+#### make log file and logs in root directory
+
+mklog
 
 #### check if SELinux is Enforcing, else exit 
 
@@ -34,26 +39,26 @@ else
     err_msg
 fi
 
-#### file for mongodb
-cat <<EOS | sudo tee -a /etc/yum.repos.d/mongodb-org-3.4.repo
+#### repo file for mongodb
+
+cat > /etc/yum.repos.d/mongodb-org-3.4.repo << "EOF"
 [mongodb-org-3.4]
 name=MongoDB Repository
-baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/3.4/x86_64/
+baseurl=https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/3.4/x86_64/
 gpgcheck=1
-enabled=0
+enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/server-3.4.asc
-EOS
+EOF
 
-#### installing packages
+#### installing packages which is not installed on the box
 
-yum install -y --enablerepo=mongodb-org-3.4 mongodb-org
+yum -y install $(check_rpms "${PACKAGES[@]}")
+	
+#### start mongod and enable it 
+
 systemctl start mongod.service
 systemctl enable mongod.service
-
-yum -y install \
-  gcc gcc-c++ glibc-headers \
-  openssl-devel readline libyaml-devel readline-devel zlib zlib-devel \
-  wget git ImageMagick ImageMagick-devel
+#### -----------more to work-------------- ####
 
 #### getting gpg key
 
