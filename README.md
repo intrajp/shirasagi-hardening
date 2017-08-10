@@ -24,7 +24,7 @@ Documentation
 Platform
 --------
 
-- CentOS, Ubuntu
+- CentOS7.3 (SELinux enabled)
 - Ruby 2.3
 - Ruby on Rails 4
 - MongoDB 3
@@ -33,9 +33,8 @@ Platform
 Installation (Auto)
 -------------------
 
-- Exec installer on CentOS7<br />
-- Only root is permitted to exec installer<br />
-- パラメーターの"example.jp"には、ブラウザでアクセスする際のドメイン名または、IPアドレスを指定してください。<br />
+- Exec installer on CentOS7.3 as root<br />
+- Set parameter "example.jp" as domain-name or IP address.<br />
 
 ```
 # curl https://raw.githubusercontent.com/intrajp/shirasagi-hardening/master/install.sh | bash -s example.jp
@@ -45,13 +44,13 @@ Installation (Auto)
 
 #### admin page 
 
-http://localhost:3000/.mypage にアクセスするとログイン画面が表示されます。<br />
+http://localhost:3000/.mypage  will show login page.<br />
 サイト名のリンクをクリックすると、登録したデモデータを確認・編集することができます。<br />
 [ ユーザーID： admin , パスワード： pass ]
 
 #### public page 
 
-http://localhost:3000/ にアクセスすると登録したデモサイトが表示されます。
+http://localhost:3000/ will show demo site registered.
 
 ## develop and test environment
 
