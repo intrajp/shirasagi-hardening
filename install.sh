@@ -142,6 +142,17 @@ check_rpms()
     echo "${RPMS_TO_BE_INSTALLED[@]}"
 }
 
+# check function succeeded 
+
+check_function_succeeded()
+{
+    if [ $? -eq 0 ]; then
+        echo "success"
+    else
+        err_msg
+    fi
+}
+
 ##################### end functions ###################
 
 #### echo installer 
@@ -401,7 +412,9 @@ chmod 644 /etc/systemd/system/shirasagi-unicorn.service
 #### start mongod and enable it 
 
 systemctl start mongod.service
+check_function_succeeded
 systemctl enable mongod.service
+check_function_succeeded
 
 #### SELinux needs to httpd_t 
 #Allow /usr/sbin/httpd to bind to network port <PORT> 
@@ -410,58 +423,87 @@ systemctl enable mongod.service
 #here we go
 #set each port if aready set,modify it
 
-semanage port -a -t http_port_t -p tcp "${PORT_COMPA}" 
-if [ $? -ne 0 ]; then
-    semanage port -m -t http_port_t -p tcp "${PORT_COMPA}" 
+for i in $(seq 1 3)
+do
+    if [ ${i} -eq 1 ]; then
+        p_="${PORT_COMPA}"
+    elif [ ${i} -eq 2 ]; then
+        p_="${PORT_CHILD}"
+    elif [ ${i} -eq 3 ]; then
+        p_="${PORT_OPEND}"
 fi
-semanage port -a -t http_port_t -p tcp "${PORT_CHILD}" 
-if [ $? -ne 0 ]; then
-    semanage port -m -t http_port_t -p tcp "${PORT_CHILD}" 
-fi
-semanage port -a -t http_port_t -p tcp "${PORT_OPEND}" 
-if [ $? -ne 0 ]; then
-    semanage port -m -t http_port_t -p tcp "${PORT_OPEND}" 
-fi
+    semanage port -a -t http_port_t -p tcp "$p_" 
+    if [ $? -ne 0 ]; then
+        semanage port -m -t http_port_t -p tcp "$p_" 
+        if [ $? -ne 0 ]; then
+            echo "semanage -m -t http_port_t -p tcp $p_ failed"
+            err_msg
+        else
+            echo "semanage -m -t http_port_t -p tcp $p_ succeeded"
+        fi
+    else
+        echo "semanage -a -t http_port_t -p tcp $p_ succeeded"
+    fi
+done
 
 #### enable nginx 
 
 systemctl enable nginx.service
+check_function_succeeded
 
 #### enable shirasagi-unicorn 
 
 systemctl enable shirasagi-unicorn.service
+check_function_succeeded
 
 #### taking changed configurations from filesystem and regenerationg dependency trees 
 
 systemctl daemon-reload
+check_function_succeeded
 
 #### start nginx
 
 systemctl start nginx.service
+check_function_succeeded
 
 cd $SS_DIR
 bundle exec rake db:drop
+check_function_succeeded
 bundle exec rake db:create_indexes
+check_function_succeeded
 bundle exec rake ss:create_site data="{ name: \"自治体サンプル\", host: \"www\", domains: \"${SS_HOSTNAME}\" }"
+check_function_succeeded
 bundle exec rake ss:create_site data="{ name: \"企業サンプル\", host: \"company\", domains: \"${SS_HOSTNAME}:${PORT_COMPA}\" }"
+check_function_succeeded
 bundle exec rake ss:create_site data="{ name: \"子育て支援サンプル\", host: \"childcare\", domains: \"${SS_HOSTNAME}:${PORT_CHILD}\" }"
+check_function_succeeded
 bundle exec rake ss:create_site data="{ name: \"オープンデータサンプル\", host: \"opendata\", domains: \"${SS_HOSTNAME}:${PORT_OPEND}\" }"
+check_function_succeeded
 bundle exec rake db:seed name=demo site=www
+check_function_succeeded
 bundle exec rake db:seed name=company site=company
+check_function_succeeded
 bundle exec rake db:seed name=childcare site=childcare
+check_function_succeeded
 bundle exec rake db:seed name=opendata site=opendata
+check_function_succeeded
 bundle exec rake db:seed name=gws
+check_function_succeeded
 bundle exec rake db:seed name=webmail
+check_function_succeeded
 
 #### start shirasagi-unicorn
 
 systemctl start shirasagi-unicorn.service
+check_function_succeeded
 
 # use openlayers as default map
 echo 'db.ss_sites.update({}, { $set: { map_api: "openlayers" } }, { multi: true });' | mongo ss > /dev/null
 
 bundle exec rake cms:generate_nodes
+check_function_succeeded
 bundle exec rake cms:generate_pages
+check_function_succeeded
 
 cat >> crontab << "EOF"
 */15 * * * * /bin/bash -l -c 'cd /var/www/shirasagi-hardening && /usr/local/rvm/wrappers/default/bundle exec rake cms:release_pages && /usr/local/rvm/wrappers/default/bundle exec rake cms:generate_nodes' >/dev/null
@@ -487,16 +529,24 @@ EOF
 
 #### restarting services
 systemctl restart nginx.service
+check_function_succeeded
 systemctl restart mongod.service
+check_function_succeeded
 systemctl restart shirasagi-unicorn.service
+check_function_succeeded
 
 #### firewalld stuff
 
 firewall-cmd --add-port=http/tcp --permanent
+check_function_succeeded
 firewall-cmd --add-port=${PORT_COMPA}/tcp --permanent
+check_function_succeeded
 firewall-cmd --add-port=${PORT_CHILD}/tcp --permanent
+check_function_succeeded
 firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent
+check_function_succeeded
 firewall-cmd --reload
+check_function_succeeded
 
 #### echo installer finished
 echo_installer_finished
