@@ -7,6 +7,12 @@
 . .config 
 . functions
 
+#### echo installer 
+echo_installer
+
+#### check OS version and if not ok, exit
+check_OS_version
+
 #### make log file and logs in root directory
 
 mklog
@@ -50,16 +56,20 @@ enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/server-3.4.asc
 EOF
 
+#### repo file for Nginx
+
+cat > /etc/yum.repos.d/nginx.repo << "EOF"
+[nginx]
+name=nginx repo
+baseurl=http://nginx.org/packages/centos/$releasever/$basearch/
+gpgcheck=0
+enabled=1
+EOF
+
 #### installing packages which is not installed on the box
 
 yum -y install $(check_rpms "${PACKAGES[@]}")
 	
-#### start mongod and enable it 
-
-systemctl start mongod.service
-systemctl enable mongod.service
-#### -----------more to work-------------- ####
-
 #### getting gpg key
 
 for i in $(seq 1 3)
@@ -71,16 +81,12 @@ do
   sleep 5s
 done
 
-#### setting something, dont konw what it it 
+#### setting something, dont konw what it is 
 
 \curl -sSL https://get.rvm.io | bash -s stable
-if [ `whoami` = root ]; then
-  RVM_HOME=/usr/local/rvm
-else
-  RVM_HOME=$HOME/.rvm
-fi
+RVM_HOME=/usr/local/rvm
 
-### installing something, dont konw what it is
+#### installing rvm
 
 export PATH="$PATH:$RVM_HOME/bin"
 source $RVM_HOME/scripts/rvm
@@ -89,9 +95,10 @@ rvm use 2.3.4 --default
 gem install bundler
 
 #### cloning shirasagi-hardening and coping files to dir
-git clone -b stable --depth 1 https://github.com/shirasagi/shirasagi
+
+git clone --depth 1 https://github.com/intrajp/${PROG_NAME}
 mkdir -p /var/www
-mv shirasagi $SS_DIR
+mv ${PROG_NAME} ${SS_DIR}
 
 #### coping ruby stuff
 
@@ -114,120 +121,14 @@ sed -i "s/dbcae379.*$/`bundle exec rake secret`/" config/secrets.yml
 
 sed -e "s/disable: true$/disable: false/" config/defaults/recommend.yml > config/recommend.yml
 
-#### firewalld stuff
+#### start mongod and enable it 
 
-firewall-cmd --add-port=http/tcp --permanent
-#firewall-cmd --add-port=https/tcp --permanent
-#firewall-cmd --add-port=3000/tcp --permanent
-firewall-cmd --add-port=${PORT_COMPA}/tcp --permanent
-firewall-cmd --add-port=${PORT_CHILD}/tcp --permanent
-firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent
-firewall-cmd --reload
+systemctl start mongod.service
+systemctl enable mongod.service
 
-#### Furigana stuff
+#### setting nginx
 
-cd
-wget -O mecab-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7cENtOXlicTFaRUE"
-wget -O mecab-ipadic-2.7.0-20070801.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7MWVlSDBCSXZMTXM"
-wget -O mecab-ruby-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7VUNlczBWVDZJbE0"
-wget https://raw.githubusercontent.com/shirasagi/shirasagi/stable/vendor/mecab/mecab-ipadic-2.7.0-20070801.patch
-
-
-cd
-tar xvzf mecab-0.996.tar.gz
-cd mecab-0.996
-./configure --enable-utf8-only
-make
-make install
-#cd
-#mv mecab-0.996 /usr/local/src
-
-cd
-tar xvzf mecab-ipadic-2.7.0-20070801.tar.gz
-cd mecab-ipadic-2.7.0-20070801
-patch -p1 < ../mecab-ipadic-2.7.0-20070801.patch
-./configure --with-charset=UTF-8
-make
-make install
-#cd
-#mv mecab-ipadic-2.7.0-20070801 /usr/local/src
-
-cd
-tar xvzf mecab-ruby-0.996.tar.gz
-cd mecab-ruby-0.996
-ruby extconf.rb
-make
-make install
-#cd
-#mv mecab-ruby-0.996 /usr/local/src
-
-echo "/usr/local/lib" | sudo tee -a /etc/ld.so.conf
-ldconfig
-
-#### Voice stuff
-
-cd
-wget http://downloads.sourceforge.net/hts-engine/hts_engine_API-1.08.tar.gz \
-  http://downloads.sourceforge.net/open-jtalk/open_jtalk-1.07.tar.gz \
-  http://downloads.sourceforge.net/lame/lame-3.99.5.tar.gz \
-  http://downloads.sourceforge.net/sox/sox-14.4.1.tar.gz
-
-cd
-tar xvzf hts_engine_API-1.08.tar.gz
-cd hts_engine_API-1.08
-./configure
-make
-make install
-#cd
-#mv hts_engine_API-1.08 /usr/local/src
-
-cd
-tar xvzf open_jtalk-1.07.tar.gz
-cd open_jtalk-1.07
-sed -i "s/#define MAXBUFLEN 1024/#define MAXBUFLEN 10240/" bin/open_jtalk.c
-sed -i "s/0x00D0 SPACE/0x000D SPACE/" mecab-naist-jdic/char.def
-./configure --with-charset=UTF-8
-make
-make install
-#cd
-#mv open_jtalk-1.07 /usr/local/src
-
-cd
-tar xvzf lame-3.99.5.tar.gz
-cd lame-3.99.5
-./configure
-make
-make install
-#cd
-#mv lame-3.99.5 /usr/local/src
-
-cd
-tar xvzf sox-14.4.1.tar.gz
-cd sox-14.4.1
-./configure
-make
-make install
-#cd
-#mv sox-14.4.1 /usr/local/src
-
-ldconfig
-
-#### Nginx stuff
-
-cat << EOF | sudo tee /etc/yum.repos.d/nginx.repo
-[nginx]
-name=nginx repo
-baseurl=http://nginx.org/packages/centos/\$releasever/\$basearch/
-gpgcheck=0
-enabled=0
-EOF
-
-yum -y --enablerepo=nginx install nginx
-#nginx -t
-systemctl start nginx.service
-systemctl enable nginx.service
-
-cat <<EOF | sudo tee /etc/nginx/conf.d/http.conf
+cat > /etc/nginx/conf.d/http.conf << "EOF"
 server_tokens off;
 server_name_in_redirect off;
 etag off;
@@ -270,7 +171,7 @@ proxy_cache_lock on;
 proxy_cache_lock_timeout 5s;
 EOF
 
-cat <<EOF | sudo tee /etc/nginx/conf.d/header.conf
+cat > /etc/nginx/conf.d/header.conf << "EOF"
 proxy_set_header Host \$host;
 proxy_set_header X-Real-IP \$remote_addr;
 proxy_set_header Remote-Addr \$remote_addr;
@@ -284,102 +185,103 @@ proxy_hide_header Link;
 proxy_hide_header ETag;
 EOF
 
-mkdir /etc/nginx/conf.d/common/
-cat <<EOF | sudo tee /etc/nginx/conf.d/common/drop.conf
+mkdir /etc/nginx/conf.d/{common,server}
+
+cat > /etc/nginx/conf.d/common/drop.conf << "EOF"
 location = /favicon.ico                      { expires 1h; access_log off; log_not_found off; }
 location = /robots.txt                       { expires 1h; access_log off; log_not_found off; }
 location = /apple-touch-icon.png             { expires 1h; access_log off; log_not_found off; }
 location = /apple-touch-icon-precomposed.png { expires 1h; access_log off; log_not_found off; }
 EOF
 
-cat <<EOF | sudo tee /etc/nginx/conf.d/virtual.conf
+cat > /etc/nginx/conf.d/virtual.conf << "EOF"
 server {
     include conf.d/server/shirasagi.conf;
-    server_name ${SS_HOSTNAME};
-    root ${SS_DIR}/public/sites/w/w/w/_/;
+    server_name example.jp;
+    root /var/www/shirasagi-hardening/public/sites/w/w/w/_/;
 }
 server {
-    listen  ${PORT_COMPA};
+    listen  8001;
     include conf.d/server/shirasagi.conf;
-    server_name ${SS_HOSTNAME}:${PORT_COMPA};
-    root ${SS_DIR}/public/sites/c/o/m/p/a/n/y/_/;
+    server_name example.jp:8001;
+    root /var/www/shirasagi-hardening/public/sites/c/o/m/p/a/n/y/_/;
 }
 server {
-    listen  ${PORT_CHILD};
+    listen  8002;
     include conf.d/server/shirasagi.conf;
-    server_name ${SS_HOSTNAME}:${PORT_CHILD};
-    root ${SS_DIR}/public/sites/c/h/i/l/d/c/a/r/e/_/;
+    server_name example.jp:8002;
+    root /var/www/shirasagi-hardening/public/sites/c/h/i/l/d/c/a/r/e/_/;
 }
 server {
-    listen  ${PORT_OPEND};
+    listen  8003;
     include conf.d/server/shirasagi.conf;
-    server_name ${SS_HOSTNAME}:${PORT_OPEND};
-    root ${SS_DIR}/public/sites/o/p/e/n/d/a/t/a/_/;
+    server_name example.jp:8003;
+    root /var/www/shirasagi-hardening/public/sites/o/p/e/n/d/a/t/a/_/;
 }
 EOF
 
-mkdir /etc/nginx/conf.d/server/
-cat <<EOF | sudo tee /etc/nginx/conf.d/server/shirasagi.conf
+cat > /etc/nginx/conf.d/server/shirasagi.conf << "EOF"
 include conf.d/common/drop.conf;
 
 location @app {
     include conf.d/header.conf;
-    if (\$request_filename ~ .*\\.(ico|gif|jpe?g|png|css|js)$) { access_log off; }
+    if ($request_filename ~ .*\\.(ico|gif|jpe?g|png|css|js)$) { access_log off; }
     proxy_pass http://127.0.0.1:3000;
-    proxy_set_header X-Accel-Mapping ${SS_DIR}/=/private_files/;
+    proxy_set_header X-Accel-Mapping /var/www/shirasagi-hardening/=/private_files/;
 }
 location / {
-    try_files \$uri \$uri/index.html @app;
+    try_files $uri $uri/index.html @app;
 }
 location /assets/ {
-    root ${SS_DIR}/public/;
+    root /var/www/shirasagi-hardening/public/;
     expires 1h;
     access_log off;
 }
 location /private_files/ {
     internal;
-    alias ${SS_DIR}/;
+    alias /var/www/shirasagi-hardening/;
 }
 EOF
 
-systemctl restart nginx.service
-
 #### daemonize
 
-cat <<EOF | sudo tee /etc/systemd/system/shirasagi-unicorn.service
+cat > /etc/systemd/system/shirasagi-unicorn.service << "EOF"
 [Unit]
 Description=Shirasagi Unicorn Server
 After=mongod.service
 
 [Service]
-User=${SS_USER}
-WorkingDirectory=${SS_DIR}
-ExecStart=${RVM_HOME}/wrappers/default/bundle exec rake unicorn:start
-ExecStop=${RVM_HOME}/wrappers/default/bundle exec rake unicorn:stop
-ExecReload=${RVM_HOME}/wrappers/default/bundle exec rake unicorn:restart
+User=root
+WorkingDirectory=/var/www/shirasagi-hardening
+ExecStart=/usr/local/rvm/wrappers/default/bundle exec rake unicorn:start
+ExecStop=/usr/local/rvm/wrappers/default/bundle exec rake unicorn:stop
+ExecReload=/usr/local/rvm/wrappers/default/bundle exec rake unicorn:restart
 Type=forking
-PIDFile=${SS_DIR}/tmp/pids/unicorn.pid
+PIDFile=/var/www/shirasagi-hardening/tmp/pids/unicorn.pid
 
 [Install]
 WantedBy=multi-user.target
 EOF
+
 chown root: /etc/systemd/system/shirasagi-unicorn.service
 chmod 644 /etc/systemd/system/shirasagi-unicorn.service
-systemctl daemon-reload
+
+#### start nginx and enable it 
+
+systemctl start nginx.service
+systemctl enable nginx.service
+
+#### start shirasagi-unicorn and enable it 
+
 systemctl enable shirasagi-unicorn.service
 systemctl start shirasagi-unicorn.service
 
 cd $SS_DIR
 bundle exec rake db:drop
 bundle exec rake db:create_indexes
-bundle exec rake ss:create_site data="{ name: \"自治体サンプル\", host: \"www\", domains: \"${SS_HOSTNAME}\" }"
 bundle exec rake ss:create_site data="{ name: \"企業サンプル\", host: \"company\", domains: \"${SS_HOSTNAME}:${PORT_COMPA}\" }"
-bundle exec rake ss:create_site data="{ name: \"子育て支援サンプル\", host: \"childcare\", domains: \"${SS_HOSTNAME}:${PORT_CHILD}\" }"
-bundle exec rake ss:create_site data="{ name: \"オープンデータサンプル\", host: \"opendata\", domains: \"${SS_HOSTNAME}:${PORT_OPEND}\" }"
 bundle exec rake db:seed name=demo site=www
 bundle exec rake db:seed name=company site=company
-bundle exec rake db:seed name=childcare site=childcare
-bundle exec rake db:seed name=opendata site=opendata
 bundle exec rake db:seed name=gws
 bundle exec rake db:seed name=webmail
 
@@ -389,14 +291,14 @@ echo 'db.ss_sites.update({}, { $set: { map_api: "openlayers" } }, { multi: true 
 bundle exec rake cms:generate_nodes
 bundle exec rake cms:generate_pages
 
-cat <<EOF | crontab -
-*/15 * * * * /bin/bash -l -c 'cd $SS_DIR && ${RVM_HOME}/wrappers/default/bundle exec rake cms:release_pages && ${RVM_HOME}/wrappers/default/bundle exec rake cms:generate_nodes' >/dev/null
-0 * * * * /bin/bash -l -c 'cd $SS_DIR && ${RVM_HOME}/wrappers/default/bundle exec rake cms:generate_pages' >/dev/null
+cat >> crontab << "EOF"
+*/15 * * * * /bin/bash -l -c 'cd /var/www/shirasagi-hardening && /usr/local/rvm/wrappers/default/bundle exec rake cms:release_pages && /usr/local/rvm/wrappers/default/bundle exec rake cms:generate_nodes' >/dev/null
+0 * * * * /bin/bash -l -c 'cd /var/www/shirasagi-hardening && /usr/local/rvm/wrappers/default/bundle exec rake cms:generate_pages' >/dev/null
 EOF
 
 # modify ImageMagick policy to work with simple captcha
 # see: https://github.com/diaspora/diaspora/issues/6828
-cd /etc/ImageMagick && cat << EOF | sudo patch
+cd /etc/ImageMagick && cat << EOF | patch
 --- policy.xml.orig     2016-12-08 13:50:47.344009000 +0900
 +++ policy.xml  2016-12-08 13:15:22.529009000 +0900
 @@ -67,6 +67,8 @@
@@ -410,3 +312,24 @@ cd /etc/ImageMagick && cat << EOF | sudo patch
 +  <policy domain="coder" rights="read | write" pattern="PNG" />
  </policymap>
 EOF
+
+#### taking changed configurations from filesystem and regenerationg dependency trees 
+
+systemctl daemon-reload
+
+
+#### restarting services
+systemctl restart nginx.service
+systemctl restart mongod.service
+systemctl restart shirasagi-unicorn.service
+
+#### firewalld stuff
+
+firewall-cmd --add-port=http/tcp --permanent
+firewall-cmd --add-port=${PORT_COMPA}/tcp --permanent
+firewall-cmd --add-port=${PORT_CHILD}/tcp --permanent
+firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent
+firewall-cmd --reload
+
+#### echo installer finished
+echo_installer_finished

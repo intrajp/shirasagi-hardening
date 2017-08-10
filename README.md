@@ -33,28 +33,26 @@ Platform
 Installation (Auto)
 -------------------
 
-- CentOS7の環境で実行してください。<br />
-- root ユーザで実行してください。<br />
+- Exec installer on CentOS7<br />
+- Only root is permitted to exec installer<br />
 - パラメーターの"example.jp"には、ブラウザでアクセスする際のドメイン名または、IPアドレスを指定してください。<br />
 
 ```
 $ su - user-which-executes-shirasagi-server
-$ curl https://raw.githubusercontent.com/shirasagi/shirasagi/master/bin/install.sh | bash -s example.jp
+$ curl https://raw.githubusercontent.com/intrajp/shirasagi-hardening/master/bin/install.sh | bash -s example.jp
 ```
 
 Installation (CentOS 7)
 -----------------------
 
-拡張機能（ふりがな、読み上げ、オープンデータ等）や詳細なインストール手順は[開発マニュアル](http://shirasagi.github.io/)をご確認ください。
-
-### パッケージのダウンロード
+### Downloading packages
 
 ```
 $ su -
 # yum -y install wget git ImageMagick ImageMagick-devel
 ```
 
-### MongoDB のインストール
+### Installing MongoDB
 
 ```
 # vi /etc/yum.repos.d/mongodb-org-3.4.repo
@@ -75,7 +73,7 @@ gpgkey=https://www.mongodb.org/static/pgp/server-3.4.asc
 # systemctl enable mongod
 ```
 
-### Ruby(RVM) のインストール
+### Installing Ruby(RVM)
 
 ```
 # curl -sSL https://rvm.io/mpapis.asc | gpg2 --import -
@@ -86,62 +84,62 @@ gpgkey=https://www.mongodb.org/static/pgp/server-3.4.asc
 # gem install bundler
 ```
 
-### SHIRASAGI-hardening のインストール
+### Installing SHIRASAGI-hardening
 
-SHIRASAGI-hardening のダウンロード
+Downloading SHIRASAGI-hardening
 
 ```
 $ git clone https://github.com/intrajp/shirasagi-hardening /var/www/shirasagi
 ```
 
-設定ファイルの設置と gem のインストール
+setting config file and installing gem
 
 ```
-$ cd /var/www/shirasagi
+$ cd /var/www/shirasagi-hardening
 $ cp -n config/samples/*.{yml,rb} config/
 $ bundle install --without development test
 ```
 
-Web サーバの起動
+Start Web server
 
 ```
 $ rake unicorn:start
 ```
 
-## サイトの作成
+## Creating site 
 
-データベース（インデックス）の作成
+creating database indexes
 
 ```
 $ rake db:drop
 $ rake db:create_indexes
 ```
 
-新規サイトの追加
+Adding new site
 
 ```
 $ rake ss:create_site data='{ name: "サイト名", host: "www", domains: "localhost:3000" }'
 ```
 
-サンプルデータ (自治体サンプル) の投入
+Setting sample demo data
 
 ```
 $ rake db:seed name=demo site=www
 ```
 
-## サイトの確認
+## Check the site 
 
-#### 管理画面
+#### admin page 
 
 http://localhost:3000/.mypage にアクセスするとログイン画面が表示されます。<br />
 サイト名のリンクをクリックすると、登録したデモデータを確認・編集することができます。<br />
 [ ユーザーID： admin , パスワード： pass ]
 
-#### 公開画面
+#### public page 
 
 http://localhost:3000/ にアクセスすると登録したデモサイトが表示されます。
 
-## 開発・テスト環境
+## develop and test environment
 
 `.env`というファイルをプロジェクトルートに用意すれば各種設定をお好みのものに切り替えられます。
 
@@ -155,7 +153,7 @@ DEVELOPMENT_LOG_LEVEL=debug
 ANALYZE_COVERAGE=disabled
 ```
 
-## その他機能の利用方法
+## Check these pages for other materials 
 
 - [グループウェアの始め方](http://shirasagi.github.io/start/gws.html)
 - [ウェブメールの始め方](http://shirasagi.github.io/start/webmail.html)

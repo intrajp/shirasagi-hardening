@@ -12,29 +12,70 @@ mklog()
 
 # error message 
 
-err_msg () {
+err_msg()
+{
     echo "Oops! Something went wrong!"
     exit 1
 }
 
+# echo installer 
+
+echo_installer()
+{
+    echo "########"
+    echo "This is ${PROG_NAME} installer"
+    echo ""
+    echo "########"
+}
+
+# echo installer finished 
+
+echo_installer_finished()
+{
+    echo "########"
+    echo "${PROG_NAME} installer finished"
+    echo "check install log file $LOGFILE for detail"
+    echo "########"
+}
+
 # check user is root 
 
-check_root () {
-    local myresult=""
+check_root()
+{
+    local result=""
     if [ ${EUID:-${UID}} = 0 ]; then
-        myresult="root"
+        result="root"
     else
-        myresult="nonroot" 
+        result="nonroot" 
     fi
-    echo "${myresult}"
+    echo "${result}"
+}
+
+# check OS version
+check_OS_version()
+{
+    if [ -e "/etc/centos-release" ]; then
+        ## just use xargs for trimming 
+        os_version=$(cat /etc/centos-release | xargs)
+        if [ "${os_version}" = "${OS_VERSION}" ]; then
+            echo "OS version is ${os_version}"
+        else
+            echo "Only on ${OS_VERSION} could be installed"
+            err_msg
+        fi
+    else
+        echo "Only on ${OS_VERSION} could be installed"
+        err_msg
+    fi
 }
 
 # check SELinux is enabled 
 
-check_SELinux_is_enabled () {
-    local myresult=""
-    myresult=$(getenforce)
-    echo "${myresult}"
+check_SELinux_is_enabled()
+{
+    local result=""
+    result=$(getenforce)
+    echo "${result}"
 }
 
 # check rpms to be installed
