@@ -4,8 +4,145 @@
 
 #### including global variables and functions
 
-. .config 
-. functions
+#. .config 
+#. functions
+
+##################### .config ###################
+
+#### prog_name
+PROG_NAME="shirasagi-hardening" 
+
+#### OS 
+OS_VERSION="CentOS Linux release 7.3.1611 (Core)"
+
+#### vars
+
+THIS_USER=""
+SELINUX=""
+
+SS_HOSTNAME=${1:-"example.jp"}
+SS_USER=${2:-"$USER"}
+SS_DIR="/var/www/${PROG_NAME}"
+
+#### ports
+
+PORT_COMPA=8001
+PORT_CHILD=8002
+PORT_OPEND=8003
+
+#### logfile
+
+NOW=`date +%Y%m%d%H%M%S`
+LOGFILE="${PROG_NAME}_install-log_${NOW}.log"
+
+#### check rpms which is not instlled on the box
+
+RPMS_TO_BE_INSTALLED=()
+PACKAGES=("policycoreutils-python" "mongodb-org" "nginx" "gcc" "gcc-c++" "glibc-headers" "openssl-devel" "readline" "libyaml-devel" "readline-devel" "zlib" "zlib-devel" "wget" "git" "ImageMagick" "ImageMagick-devel")
+
+##################### end .config ###################
+
+##################### functions ###################
+
+# creates log file in /root and logs what the script do 
+
+mklog()
+{
+    sync >/dev/null 2>&1
+    exec > >(tee $LOGFILE) 2>&1
+}
+
+# error message 
+
+err_msg()
+{
+    echo "Oops! Something went wrong!"
+    exit 1
+}
+
+# echo installer 
+
+echo_installer()
+{
+    echo "########"
+    echo "This is ${PROG_NAME} installer"
+    echo ""
+    echo "########"
+}
+
+# echo installer finished 
+
+echo_installer_finished()
+{
+    echo "########"
+    echo "${PROG_NAME} installer finished"
+    echo "check install log file $LOGFILE for detail"
+    echo "########"
+}
+
+# check user is root 
+
+check_root()
+{
+    local result=""
+    if [ ${EUID:-${UID}} = 0 ]; then
+        result="root"
+    else
+        result="nonroot" 
+    fi
+    echo "${result}"
+}
+
+# check OS version
+
+check_OS_version()
+{
+    if [ -e "/etc/centos-release" ]; then
+        ## just use xargs for trimming 
+        os_version=$(cat /etc/centos-release | xargs)
+        if [ "${os_version}" = "${OS_VERSION}" ]; then
+            echo "OS version is ${os_version}"
+        else
+            echo "Only on ${OS_VERSION} could be installed"
+            err_msg
+        fi
+    else
+        echo "Only on ${OS_VERSION} could be installed"
+        err_msg
+    fi
+}
+
+# check SELinux is enabled 
+
+check_SELinux_is_enabled()
+{
+    local result=""
+    result=$(getenforce)
+    echo "${result}"
+}
+
+# check rpms to be installed
+
+check_rpms()
+{
+    local num=1
+    RPMS_TO_BE_INSTALLED=()
+    while [ $num -le $# ]; do
+        local rpm_lacked=""
+        local rpm_name=""
+        rpm_name=$(eval echo "\$$num")
+        #echo $rpm_name
+        `rpm -q "${rpm_name}" >/dev/null`
+        if [ $? -ne 0 ]; then
+            rpm_lacked=$(echo "$rpm_name")
+            RPMS_TO_BE_INSTALLED=("${RPMS_TO_BE_INSTALLED[@]}" "${rpm_lacked}")
+        fi
+        shift
+    done
+    echo "${RPMS_TO_BE_INSTALLED[@]}"
+}
+
+##################### end functions ###################
 
 #### echo installer 
 echo_installer
