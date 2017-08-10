@@ -121,11 +121,6 @@ sed -i "s/dbcae379.*$/`bundle exec rake secret`/" config/secrets.yml
 
 sed -e "s/disable: true$/disable: false/" config/defaults/recommend.yml > config/recommend.yml
 
-#### start mongod and enable it 
-
-systemctl start mongod.service
-systemctl enable mongod.service
-
 #### setting nginx
 
 cat > /etc/nginx/conf.d/http.conf << "EOF"
@@ -266,24 +261,64 @@ EOF
 chown root: /etc/systemd/system/shirasagi-unicorn.service
 chmod 644 /etc/systemd/system/shirasagi-unicorn.service
 
-#### start nginx and enable it 
+#### start mongod and enable it 
 
-systemctl start nginx.service
+systemctl start mongod.service
+systemctl enable mongod.service
+
+#### SELinux needs to httpd_t 
+#Allow /usr/sbin/httpd to bind to network port <PORT> 
+#Modify the port type.
+#where PORT_TYPE is one of the following: ntop_port_t, http_cache_port_t, http_port_t.
+#here we go
+#set each port if aready set,modify it
+
+semanage port -a -t http_port_t -p tcp "${PORT_COMPA}" 
+if [ $? -ne 0 ]; then
+    semanage port -m -t http_port_t -p tcp "${PORT_COMPA}" 
+fi
+semanage port -a -t http_port_t -p tcp "${PORT_CHILD}" 
+if [ $? -ne 0 ]; then
+    semanage port -m -t http_port_t -p tcp "${PORT_CHILD}" 
+fi
+semanage port -a -t http_port_t -p tcp "${PORT_OPEND}" 
+if [ $? -ne 0 ]; then
+    semanage port -m -t http_port_t -p tcp "${PORT_OPEND}" 
+fi
+
+#### enable nginx 
+
 systemctl enable nginx.service
 
-#### start shirasagi-unicorn and enable it 
+#### enable shirasagi-unicorn 
 
 systemctl enable shirasagi-unicorn.service
-systemctl start shirasagi-unicorn.service
+
+#### taking changed configurations from filesystem and regenerationg dependency trees 
+
+systemctl daemon-reload
+
+#### start nginx
+
+systemctl start nginx.service
 
 cd $SS_DIR
 bundle exec rake db:drop
 bundle exec rake db:create_indexes
+bundle exec rake ss:create_site data="{ name: \"自治体サンプル\", host: \"www\", domains: \"${SS_HOSTNAME}\" }"
 bundle exec rake ss:create_site data="{ name: \"企業サンプル\", host: \"company\", domains: \"${SS_HOSTNAME}:${PORT_COMPA}\" }"
+bundle exec rake ss:create_site data="{ name: \"子育て支援サンプル\", host: \"childcare\", domains: \"${SS_HOSTNAME}:${PORT_CHILD}\" }"
+bundle exec rake ss:create_site data="{ name: \"オープンデータサンプル\", host: \"opendata\", domains: \"${SS_HOSTNAME}:${PORT_OPEND}\" }"
 bundle exec rake db:seed name=demo site=www
 bundle exec rake db:seed name=company site=company
+bundle exec rake db:seed name=childcare site=childcare
+bundle exec rake db:seed name=opendata site=opendata
 bundle exec rake db:seed name=gws
 bundle exec rake db:seed name=webmail
+
+#### start shirasagi-unicorn
+
+systemctl start shirasagi-unicorn.service
 
 # use openlayers as default map
 echo 'db.ss_sites.update({}, { $set: { map_api: "openlayers" } }, { multi: true });' | mongo ss > /dev/null
@@ -312,11 +347,6 @@ cd /etc/ImageMagick && cat << EOF | patch
 +  <policy domain="coder" rights="read | write" pattern="PNG" />
  </policymap>
 EOF
-
-#### taking changed configurations from filesystem and regenerationg dependency trees 
-
-systemctl daemon-reload
-
 
 #### restarting services
 systemctl restart nginx.service
