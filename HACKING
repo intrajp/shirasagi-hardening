@@ -1,3 +1,4 @@
+#### How to maintain this project ####
 check upstream and make patch like this
 $ git format-patch -1
 copy the patch file and check
