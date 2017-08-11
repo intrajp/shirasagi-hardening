@@ -146,24 +146,71 @@ check_rpms()
 
 check_function_succeeded()
 {
+    local comm
+    comm=$1
     if [ $? -eq 0 ]; then
-        echo "success"
+        echo "'$comm' succeeded"
     else
+        echo "'$comm' failed"
         err_msg
     fi
 }
 
+# clean the BUILD directory 
+
+clean_build_dir()
+{
+    local comm
+    comm=$1
+    if [ $? -eq 0 ]; then
+        echo "'$comm' succeeded"
+    else
+        echo "'$comm' failed"
+        err_msg
+    fi
+}
+
+COM_1="systemctl start mongod.service"
+COM_2="systemctl enable mongod.service"
+COM_3="systemctl enable nginx.service"
+COM_4="systemctl enable shirasagi-unicorn.service"
+COM_5="systemctl daemon-reload"
+COM_6="systemctl start nginx.service"
+COM_7="bundle exec rake db:drop"
+COM_8="bundle exec rake db:create_indexes"
+COM_9="bundle exec rake ss:create_site data=\"{ name: \"自治体サンプル\", host: \"www\", domains: \"${SS_HOSTNAME}\" }\""
+COM_10="bundle exec rake ss:create_site data=\"{ name: \"企業サンプル\", host: \"company\", domains: \"${SS_HOSTNAME}:${PORT_COMPA}\" }\""
+COM_11="bundle exec rake ss:create_site data=\"{ name: \"子育て支援サンプル\", host: \"childcare\", domains: \"${SS_HOSTNAME}:${PORT_CHILD}\" }\""
+COM_12="bundle exec rake ss:create_site data=\"{ name: \"オープンデータサンプル\", host: \"opendata\", domains: \"${SS_HOSTNAME}:${PORT_OPEND}\" }\""
+COM_13="bundle exec rake db:seed name=demo site=www"
+COM_14="bundle exec rake db:seed name=company site=company"
+COM_15="bundle exec rake db:seed name=childcare site=childcare"
+COM_16="bundle exec rake db:seed name=opendata site=opendata"
+COM_17="bundle exec rake db:seed name=gws"
+COM_18="bundle exec rake db:seed name=webmail"
+COM_19="systemctl start shirasagi-unicorn.service"
+COM_20="bundle exec rake cms:generate_nodes"
+COM_21="bundle exec rake cms:generate_pages"
+COM_22="systemctl restart nginx.service"
+COM_23="systemctl restart mongod.service"
+COM_24="systemctl restart shirasagi-unicorn.service"
+COM_25="firewall-cmd --add-port=http/tcp --permanent"
+COM_26="firewall-cmd --add-port=${PORT_COMPA}/tcp --permanent"
+COM_27="firewall-cmd --add-port=${PORT_CHILD}/tcp --permanent"
+COM_28="firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent"
+COM_29="firewall-cmd --reload"
+COM_30="rm -rf ${SS_DIR}/BUILD"
 ##################### end functions ###################
+
+#### make log file and logs in root directory
+
+mklog
 
 #### echo installer 
 echo_installer
 
 #### check OS version and if not ok, exit
 check_OS_version
-
-#### make log file and logs in root directory
-
-mklog
 
 #### check if SELinux is Enforcing, else exit 
 
@@ -268,6 +315,98 @@ sed -i "s/dbcae379.*$/`bundle exec rake secret`/" config/secrets.yml
 #### enable recommendation
 
 sed -e "s/disable: true$/disable: false/" config/defaults/recommend.yml > config/recommend.yml
+
+#### Furigana
+mkdir BUILD
+
+pushd BUILD
+
+wget -O mecab-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7cENtOXlicTFaRUE"
+wget -O mecab-ipadic-2.7.0-20070801.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7MWVlSDBCSXZMTXM"
+wget -O mecab-ruby-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7VUNlczBWVDZJbE0"
+wget https://raw.githubusercontent.com/shirasagi/shirasagi/stable/vendor/mecab/mecab-ipadic-2.7.0-20070801.patch
+
+tar xvzf mecab-0.996.tar.gz
+
+pushd mecab-0.996
+
+./configure --enable-utf8-only
+make
+make install
+
+popd
+
+tar xvzf mecab-ipadic-2.7.0-20070801.tar.gz
+
+pushd mecab-ipadic-2.7.0-20070801
+
+patch -p1 < ../mecab-ipadic-2.7.0-20070801.patch
+./configure --with-charset=UTF-8
+make
+make install
+
+popd
+
+tar xvzf mecab-ruby-0.996.tar.gz
+pushd mecab-ruby-0.996
+ruby extconf.rb
+make
+make install
+
+popd
+
+cat >> /etc/ld.so.conf << "EOF"
+/usr/local/lib
+EOF
+
+ldconfig
+
+#### Voice
+popd
+pushd BUILD
+
+wget http://downloads.sourceforge.net/hts-engine/hts_engine_API-1.08.tar.gz \
+  http://downloads.sourceforge.net/open-jtalk/open_jtalk-1.07.tar.gz \
+  http://downloads.sourceforge.net/lame/lame-3.99.5.tar.gz \
+  http://downloads.sourceforge.net/sox/sox-14.4.1.tar.gz
+
+tar xvzf hts_engine_API-1.08.tar.gz
+pushd hts_engine_API-1.08
+./configure
+make
+make install
+
+popd
+
+tar xvzf open_jtalk-1.07.tar.gz
+pushd open_jtalk-1.07
+sed -i "s/#define MAXBUFLEN 1024/#define MAXBUFLEN 10240/" bin/open_jtalk.c
+sed -i "s/0x00D0 SPACE/0x000D SPACE/" mecab-naist-jdic/char.def
+./configure --with-charset=UTF-8
+make
+make install
+
+popd
+
+tar xvzf lame-3.99.5.tar.gz
+pushd lame-3.99.5
+./configure
+make
+make install
+
+popd
+
+tar xvzf sox-14.4.1.tar.gz
+pushd sox-14.4.1
+./configure
+make
+make install
+
+popd
+
+ldconfig
+
+popd
 
 #### setting nginx
 
@@ -411,10 +550,10 @@ chmod 644 /etc/systemd/system/shirasagi-unicorn.service
 
 #### start mongod and enable it 
 
-systemctl start mongod.service
-check_function_succeeded
-systemctl enable mongod.service
-check_function_succeeded
+${COM_1}
+check_function_succeeded "${COM_1}"
+${COM_2}
+check_function_succeeded "${COM_2}"
 
 #### SELinux needs to httpd_t 
 #Allow /usr/sbin/httpd to bind to network port <PORT> 
@@ -436,74 +575,78 @@ fi
     if [ $? -ne 0 ]; then
         semanage port -m -t http_port_t -p tcp "$p_" 
         if [ $? -ne 0 ]; then
-            echo "semanage -m -t http_port_t -p tcp $p_ failed"
+            echo "'semanage -m -t http_port_t -p tcp $p_' failed"
             err_msg
         else
-            echo "semanage -m -t http_port_t -p tcp $p_ succeeded"
+            echo "'semanage -m -t http_port_t -p tcp $p_' succeeded"
         fi
     else
-        echo "semanage -a -t http_port_t -p tcp $p_ succeeded"
+        echo "'semanage -a -t http_port_t -p tcp $p_' succeeded"
     fi
 done
 
 #### enable nginx 
 
-systemctl enable nginx.service
-check_function_succeeded
+${COM_3}
+check_function_succeeded "${COM_3}"
 
 #### enable shirasagi-unicorn 
 
-systemctl enable shirasagi-unicorn.service
-check_function_succeeded
+${COM_4}
+check_function_succeeded "${COM_4}"
 
 #### taking changed configurations from filesystem and regenerationg dependency trees 
 
-systemctl daemon-reload
-check_function_succeeded
+${COM_5}
+check_function_succeeded "${COM_5}"
 
 #### start nginx
 
-systemctl start nginx.service
-check_function_succeeded
+${COM_6}
+check_function_succeeded "${COM_6}"
 
 cd $SS_DIR
-bundle exec rake db:drop
-check_function_succeeded
-bundle exec rake db:create_indexes
-check_function_succeeded
+${COM_7}
+check_function_succeeded "${COM_7}"
+${COM_8}
+check_function_succeeded "${COM_8}"
 bundle exec rake ss:create_site data="{ name: \"自治体サンプル\", host: \"www\", domains: \"${SS_HOSTNAME}\" }"
-check_function_succeeded
+#${COM_9}
+check_function_succeeded "${COM_9}"
 bundle exec rake ss:create_site data="{ name: \"企業サンプル\", host: \"company\", domains: \"${SS_HOSTNAME}:${PORT_COMPA}\" }"
-check_function_succeeded
+#${COM_10}
+check_function_succeeded "${COM_10}"
 bundle exec rake ss:create_site data="{ name: \"子育て支援サンプル\", host: \"childcare\", domains: \"${SS_HOSTNAME}:${PORT_CHILD}\" }"
-check_function_succeeded
+#${COM_11}
+check_function_succeeded "${COM_11}"
 bundle exec rake ss:create_site data="{ name: \"オープンデータサンプル\", host: \"opendata\", domains: \"${SS_HOSTNAME}:${PORT_OPEND}\" }"
-check_function_succeeded
-bundle exec rake db:seed name=demo site=www
-check_function_succeeded
-bundle exec rake db:seed name=company site=company
-check_function_succeeded
-bundle exec rake db:seed name=childcare site=childcare
-check_function_succeeded
-bundle exec rake db:seed name=opendata site=opendata
-check_function_succeeded
-bundle exec rake db:seed name=gws
-check_function_succeeded
-bundle exec rake db:seed name=webmail
-check_function_succeeded
+#${COM_12}
+check_function_succeeded "${COM_12}"
+${COM_13}
+check_function_succeeded "${COM_13}"
+${COM_14}
+check_function_succeeded "${COM_14}"
+${COM_15}
+check_function_succeeded "${COM_15}"
+${COM_16}
+check_function_succeeded "${COM_16}"
+${COM_17}
+check_function_succeeded "${COM_17}"
+${COM_18}
+check_function_succeeded "${COM_18}"
 
 #### start shirasagi-unicorn
 
-systemctl start shirasagi-unicorn.service
-check_function_succeeded
+${COM_19}
+check_function_succeeded "${COM_19}"
 
 # use openlayers as default map
 echo 'db.ss_sites.update({}, { $set: { map_api: "openlayers" } }, { multi: true });' | mongo ss > /dev/null
 
-bundle exec rake cms:generate_nodes
-check_function_succeeded
-bundle exec rake cms:generate_pages
-check_function_succeeded
+${COM_20}
+check_function_succeeded "${COM_20}"
+${COM_21}
+check_function_succeeded "${COM_21}"
 
 cat >> crontab << "EOF"
 */15 * * * * /bin/bash -l -c 'cd /var/www/shirasagi-hardening && /usr/local/rvm/wrappers/default/bundle exec rake cms:release_pages && /usr/local/rvm/wrappers/default/bundle exec rake cms:generate_nodes' >/dev/null
@@ -528,25 +671,27 @@ cd /etc/ImageMagick && cat << EOF | patch
 EOF
 
 #### restarting services
-systemctl restart nginx.service
-check_function_succeeded
-systemctl restart mongod.service
-check_function_succeeded
-systemctl restart shirasagi-unicorn.service
-check_function_succeeded
+${COM_22}
+check_function_succeeded "${COM_22}"
+${COM_23}
+check_function_succeeded "${COM_23}"
+${COM_24}
+check_function_succeeded "${COM_24}"
 
 #### firewalld stuff
 
-firewall-cmd --add-port=http/tcp --permanent
-check_function_succeeded
-firewall-cmd --add-port=${PORT_COMPA}/tcp --permanent
-check_function_succeeded
-firewall-cmd --add-port=${PORT_CHILD}/tcp --permanent
-check_function_succeeded
-firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent
-check_function_succeeded
-firewall-cmd --reload
-check_function_succeeded
+${COM_25}
+check_function_succeeded "${COM_25}"
+${COM_26}
+check_function_succeeded "${COM_26}"
+${COM_27}
+check_function_succeeded "${COM_27}"
+${COM_28}
+check_function_succeeded "${COM_28}"
+${COM_29}
+check_function_succeeded "${COM_29}"
+${COM_30}
+check_function_succeeded "${COM_30}"
 
 #### echo installer finished
 echo_installer_finished
