@@ -6,10 +6,10 @@ After=mongod.service
 
 [Service]
 User=root
-WorkingDirectory=/var/www/shirasagi
+WorkingDirectory=/var/www/shirasagi-hardening
 Environment=RAILS_ENV=production
 SyslogIdentifier=unicorn
-PIDFile=/var/www/shirasagi/tmp/pids/unicorn.pid
+PIDFile=/var/www/shirasagi-hardening/tmp/pids/unicorn.pid
 Type=forking
 
 ExecStart=/usr/local/rvm/bin/start_unicorn  -c config/unicorn.rb -E production -D
