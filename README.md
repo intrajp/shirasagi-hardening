@@ -54,9 +54,8 @@ http://localhost:3000/ will show demo site registered.
 
 ## develop and test environment
 
-`.env`というファイルをプロジェクトルートに用意すれば各種設定をお好みのものに切り替えられます。
-
-(How to set)
+`.env` file in project root will set configuration as you wish
+(How to set configuration)
 
 - Change the log level from `warn` to `debug` 
 - Remove the coverage analyze which is default when testing the site
