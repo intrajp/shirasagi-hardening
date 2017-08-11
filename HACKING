@@ -1,0 +1,8 @@
+check upstream and make patch like this
+$ git format-patch -1
+copy the patch file and check
+$ git apply --stat <patch name>
+check the patch
+$ git apply --check <patch name>
+apply the patch with sign
+$ git am --signoff < <patch name>
