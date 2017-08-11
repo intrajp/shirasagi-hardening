@@ -45,8 +45,8 @@ Installation (Auto)
 #### admin page 
 
 http://localhost:3000/.mypage  will show login page.<br />
-サイト名のリンクをクリックすると、登録したデモデータを確認・編集することができます。<br />
-[ ユーザーID： admin , パスワード： pass ]
+Clicking the link as site name, you can check or edit the registered demo data.<br />
+[ UserID： admin , Password： pass ]
 
 #### public page 
 
@@ -56,10 +56,10 @@ http://localhost:3000/ will show demo site registered.
 
 `.env`というファイルをプロジェクトルートに用意すれば各種設定をお好みのものに切り替えられます。
 
-(設定例)
+(How to set)
 
-- デフォルトで`warn`になっているログレベルを`debug`にしたい場合。
-- テスト時にデフォルトで実行されるカバレッジ計測を省きたい場合。
+- Change the log level from `warn` to `debug` 
+- Remove the coverage analyze which is default when testing the site
 
 ```
 DEVELOPMENT_LOG_LEVEL=debug
