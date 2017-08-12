@@ -1,0 +1,2 @@
+*/15 * * * * /bin/bash -l -c 'cd SS-DIR && RVM-HOME/wrappers/default/bundle exec rake cms:release_pages && RVM-HOME/wrappers/default/bundle exec rake cms:generate_nodes' >/dev/null
+0 * * * * /bin/bash -l -c 'cd SS-DIR && RVM-HOME/wrappers/default/bundle exec rake cms:generate_pages' >/dev/null

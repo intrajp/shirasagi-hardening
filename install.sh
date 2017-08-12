@@ -40,6 +40,11 @@ OS_VERSION="CentOS Linux release 7.3.1611 (Core)"
 
 THIS_USER=""
 SELINUX=""
+MONGODB_VERSION="3.4"
+INSTALL_TEMPLATE_PATH="install_template_files"
+NGINX_CONF_PATH="/etc/nginx/conf.d"
+SYSTEMD_CONF_PATH="/etc/systemd/system"
+REPO_PATH="/etc/yum.repos.d"
 
 SS_HOSTNAME=${1:-"example.jp"}
 SS_USER=${2:-"$USER"}
@@ -60,6 +65,10 @@ LOGFILE="${PROG_NAME}_install-log_${NOW}.log"
 
 RPMS_TO_BE_INSTALLED=()
 PACKAGES=("policycoreutils-python" "mongodb-org" "nginx" "gcc" "gcc-c++" "glibc-headers" "openssl-devel" "readline" "libyaml-devel" "readline-devel" "zlib" "zlib-devel" "wget" "git" "ImageMagick" "ImageMagick-devel")
+
+#### file templates to be instlled on the box
+
+INSTALL_FILES=("crontab" "drop.conf" "header.conf" "httpd.conf" "mongodb-org-MONGODB-VERSION.repo" "nginx.repo" "shirasagi-unicorn.service" "shirasagi.conf" "virtual.conf")
 
 ##################### end .config ###################
 
@@ -221,11 +230,23 @@ COM_27="firewall-cmd --add-port=${PORT_CHILD}/tcp --permanent"
 COM_28="firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent"
 COM_29="firewall-cmd --reload"
 COM_30="rm -rf ${SS_DIR}/BUILD"
+COM_31="make"
 ##################### end functions ###################
 
 #### make log file and logs in root directory
 
 mklog
+
+#### make install template directory
+
+mkdir "${INSTALL_TEMPLATE_PATH}"
+
+pushd ${INSTALL_TEMPLATE_PATH}
+    for in "${INSTALL_FILES[@]}"
+    do
+        curl https://raw.githubusercontent.com/intrajp/shirasagi-hardening/master/${INSTALL_TEMPLATE_PATH}/${i}
+    done
+popd
 
 #### echo installer 
 echo_installer
@@ -263,24 +284,13 @@ fi
 
 #### repo file for mongodb
 
-cat > /etc/yum.repos.d/mongodb-org-3.4.repo << "EOF"
-[mongodb-org-3.4]
-name=MongoDB Repository
-baseurl=https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/3.4/x86_64/
-gpgcheck=1
-enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/server-3.4.asc
-EOF
+cp ${INSTALL_TEMPLATE_PATH}/mongodb-org-MONGODB-VERSION.repo ${REPO_PATH}
+sed -i "s/MONGODB-VERSION/${MONGODB_VERSION}/g" ${REPO_PATH}/mongodb-org-MONGODB-VERSION.repo
+mv ${REPO_PATH}/mongodb-org-MONGODB-VERSION.repo ${REPO_PATH}/mongodb-org-${MONGODB_VERSION}.repo
 
 #### repo file for Nginx
 
-cat > /etc/yum.repos.d/nginx.repo << "EOF"
-[nginx]
-name=nginx repo
-baseurl=http://nginx.org/packages/centos/$releasever/$basearch/
-gpgcheck=0
-enabled=1
-EOF
+cp ${INSTALL_TEMPLATE_PATH}/nginx.repo ${REPO_PATH}
 
 #### installing packages which is not installed on the box
 
@@ -352,7 +362,9 @@ tar xvzf mecab-0.996.tar.gz
 pushd mecab-0.996
 
 ./configure --enable-utf8-only
-make
+#make
+${COM_31}
+check_function_succeeded "${COM_31}"
 make install
 
 popd
@@ -363,7 +375,9 @@ pushd mecab-ipadic-2.7.0-20070801
 
 patch -p1 < ../mecab-ipadic-2.7.0-20070801.patch
 ./configure --with-charset=UTF-8
-make
+#make
+${COM_31}
+check_function_succeeded "${COM_31}"
 make install
 
 popd
@@ -371,7 +385,9 @@ popd
 tar xvzf mecab-ruby-0.996.tar.gz
 pushd mecab-ruby-0.996
 ruby extconf.rb
-make
+#make
+${COM_31}
+check_function_succeeded "${COM_31}"
 make install
 
 popd
@@ -394,7 +410,9 @@ wget http://downloads.sourceforge.net/hts-engine/hts_engine_API-1.08.tar.gz \
 tar xvzf hts_engine_API-1.08.tar.gz
 pushd hts_engine_API-1.08
 ./configure
-make
+#make
+${COM_31}
+check_function_succeeded "${COM_31}"
 make install
 
 popd
@@ -404,7 +422,9 @@ pushd open_jtalk-1.07
 sed -i "s/#define MAXBUFLEN 1024/#define MAXBUFLEN 10240/" bin/open_jtalk.c
 sed -i "s/0x00D0 SPACE/0x000D SPACE/" mecab-naist-jdic/char.def
 ./configure --with-charset=UTF-8
-make
+#make
+${COM_31}
+check_function_succeeded "${COM_31}"
 make install
 
 popd
@@ -412,7 +432,9 @@ popd
 tar xvzf lame-3.99.5.tar.gz
 pushd lame-3.99.5
 ./configure
-make
+#make
+${COM_31}
+check_function_succeeded "${COM_31}"
 make install
 
 popd
@@ -420,7 +442,9 @@ popd
 tar xvzf sox-14.4.1.tar.gz
 pushd sox-14.4.1
 ./configure
-make
+#make
+${COM_31}
+check_function_succeeded "${COM_31}"
 make install
 
 popd
@@ -431,140 +455,31 @@ popd
 
 #### setting nginx
 
-cat > /etc/nginx/conf.d/http.conf << "EOF"
-server_tokens off;
-server_name_in_redirect off;
-etag off;
-client_max_body_size 100m;
-client_body_buffer_size 256k;
+cp ${INSTALL_TEMPLATE_PATH}/httpd.conf ${NGINX_CONF_PATH} 
 
-gzip on;
-gzip_http_version 1.0;
-gzip_comp_level 1;
-gzip_proxied any;
-gzip_vary on;
-gzip_buffers 4 8k;
-gzip_min_length 1000;
-gzip_types text/plain
-           text/xml
-           text/css
-           text/javascript
-           application/xml
-           application/xhtml+xml
-           application/rss+xml
-           application/atom_xml
-           application/javascript
-           application/x-javascript
-           application/x-httpd-php;
-gzip_disable "MSIE [1-6]\\.";
-gzip_disable "Mozilla/4";
+cp ${INSTALL_TEMPLATE_PATH}/header.conf ${NGINX_CONF_PATH} 
 
-proxy_headers_hash_bucket_size 128;
-proxy_headers_hash_max_size 1024;
-proxy_cache_path /var/cache/nginx/proxy_cache levels=1:2 keys_zone=my-key:8m max_size=50m inactive=120m;
-proxy_temp_path /var/cache/nginx/proxy_temp;
-proxy_buffers 8 64k;
-proxy_buffer_size 64k;
-proxy_max_temp_file_size 0;
-proxy_connect_timeout 30;
-proxy_read_timeout 120;
-proxy_send_timeout 10;
-proxy_cache_use_stale timeout invalid_header http_500 http_502 http_503 http_504;
-proxy_cache_lock on;
-proxy_cache_lock_timeout 5s;
-EOF
+mkdir ${NGINX_CONF_PATH}/{common,server}
 
-cat > /etc/nginx/conf.d/header.conf << "EOF"
-proxy_set_header Host \$host;
-proxy_set_header X-Real-IP \$remote_addr;
-proxy_set_header Remote-Addr \$remote_addr;
-proxy_set_header X-Forwarded-Host \$http_host;
-proxy_set_header X-Forwarded-Server \$host;
-proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-proxy_set_header Accept-Encoding "";
-proxy_set_header X-Sendfile-Type X-Accel-Redirect;
-proxy_hide_header X-Pingback;
-proxy_hide_header Link;
-proxy_hide_header ETag;
-EOF
+cp ${INSTALL_TEMPLATE_PATH}/drop.conf ${NGINX_CONF_PATH}/common
 
-mkdir /etc/nginx/conf.d/{common,server}
+cp ${INSTALL_TEMPLATE_PATH}/virtual.conf ${NGINX_CONF_PATH}/conf.d
 
-cat > /etc/nginx/conf.d/common/drop.conf << "EOF"
-location = /favicon.ico                      { expires 1h; access_log off; log_not_found off; }
-location = /robots.txt                       { expires 1h; access_log off; log_not_found off; }
-location = /apple-touch-icon.png             { expires 1h; access_log off; log_not_found off; }
-location = /apple-touch-icon-precomposed.png { expires 1h; access_log off; log_not_found off; }
-EOF
+sed -i "s/SS-HOSTNAME/${SS_HOSTNAME}/g" ${NGINX_CONF_PATH}/virtual.conf
+sed -i "s/PORT-COMPA/${PORT_COMPA}}/g" ${NGINX_CONF_PATH}/virtual.conf
+sed -i "s/PORT-CHILD/${PORT_CHILD}}/g" ${NGINX_CONF_PATH}/virtual.conf
+sed -i "s/PORT-OPEND/${PORT_OPEND}}/g" ${NGINX_CONF_PATH}/virtual.conf
+sed -i "s/SS-DIR/${SS_DIR}}/g" ${NGINX_CONF_PATH}/virtual.conf
 
-cat > /etc/nginx/conf.d/virtual.conf << "EOF"
-server {
-    include conf.d/server/shirasagi.conf;
-    server_name example.jp;
-    root /var/www/shirasagi-hardening/public/sites/w/w/w/_/;
-}
-server {
-    listen  8001;
-    include conf.d/server/shirasagi.conf;
-    server_name example.jp:8001;
-    root /var/www/shirasagi-hardening/public/sites/c/o/m/p/a/n/y/_/;
-}
-server {
-    listen  8002;
-    include conf.d/server/shirasagi.conf;
-    server_name example.jp:8002;
-    root /var/www/shirasagi-hardening/public/sites/c/h/i/l/d/c/a/r/e/_/;
-}
-server {
-    listen  8003;
-    include conf.d/server/shirasagi.conf;
-    server_name example.jp:8003;
-    root /var/www/shirasagi-hardening/public/sites/o/p/e/n/d/a/t/a/_/;
-}
-EOF
+cp ${INSTALL_TEMPLATE_PATH}/shirasagi.conf ${NGINX_CONF_PATH}/server
+sed -i "s/SS-DIR/${SS_DIR}}/g" ${NGINX_CONF_PATH}/shirasagi.conf
 
-cat > /etc/nginx/conf.d/server/shirasagi.conf << "EOF"
-include conf.d/common/drop.conf;
-
-location @app {
-    include conf.d/header.conf;
-    if ($request_filename ~ .*\\.(ico|gif|jpe?g|png|css|js)$) { access_log off; }
-    proxy_pass http://127.0.0.1:3000;
-    proxy_set_header X-Accel-Mapping /var/www/shirasagi-hardening/=/private_files/;
-}
-location / {
-    try_files $uri $uri/index.html @app;
-}
-location /assets/ {
-    root /var/www/shirasagi-hardening/public/;
-    expires 1h;
-    access_log off;
-}
-location /private_files/ {
-    internal;
-    alias /var/www/shirasagi-hardening/;
-}
-EOF
+cp ${INSTALL_TEMPLATE_PATH}/shirasagi-unicorn.service ${SYSTEMD_CONF_PATH} 
+sed -i "s/SS-DIR/${SS_DIR}}/g" ${SYSTEMD_CONF_PATH}/shirasagi-unicorn.service
+sed -i "s/SS-USER/${SS_USER}}/g" ${SYSTEMD_CONF_PATH}/shirasagi-unicorn.service
+sed -i "s/RVM-HOME/${RVM_HOME}}/g" ${SYSTEMD_CONF_PATH}/shirasagi-unicorn.service
 
 #### daemonize
-
-cat > /etc/systemd/system/shirasagi-unicorn.service << "EOF"
-[Unit]
-Description=Shirasagi Unicorn Server
-After=mongod.service
-
-[Service]
-User=root
-WorkingDirectory=/var/www/shirasagi-hardening
-ExecStart=/usr/local/rvm/wrappers/default/bundle exec rake unicorn:start
-ExecStop=/usr/local/rvm/wrappers/default/bundle exec rake unicorn:stop
-ExecReload=/usr/local/rvm/wrappers/default/bundle exec rake unicorn:restart
-Type=forking
-PIDFile=/var/www/shirasagi-hardening/tmp/pids/unicorn.pid
-
-[Install]
-WantedBy=multi-user.target
-EOF
 
 chown root: /etc/systemd/system/shirasagi-unicorn.service
 chmod 644 /etc/systemd/system/shirasagi-unicorn.service
@@ -669,10 +584,10 @@ check_function_succeeded "${COM_20}"
 ${COM_21}
 check_function_succeeded "${COM_21}"
 
-cat >> crontab << "EOF"
-*/15 * * * * /bin/bash -l -c 'cd /var/www/shirasagi-hardening && /usr/local/rvm/wrappers/default/bundle exec rake cms:release_pages && /usr/local/rvm/wrappers/default/bundle exec rake cms:generate_nodes' >/dev/null
-0 * * * * /bin/bash -l -c 'cd /var/www/shirasagi-hardening && /usr/local/rvm/wrappers/default/bundle exec rake cms:generate_pages' >/dev/null
-EOF
+cp ${INSTALL_TEMPLATE_PATH}/crontab ${SYSTEMD_CONF_PATH} 
+
+sed -i "s/SS-DIR/${SS_DIR}}/g" ${INSTALL_TEMPLATE_PATH}/crontab
+sed -i "s/RVM-HOME/${RVM_HOME}}/g" ${INSTALL_TEMPLATE_PATH}/crontab
 
 # modify ImageMagick policy to work with simple captcha
 # see: https://github.com/diaspora/diaspora/issues/6828
