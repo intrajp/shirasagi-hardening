@@ -42,13 +42,19 @@ THIS_USER=""
 SELINUX=""
 MONGODB_VERSION="3.4"
 INSTALL_TEMPLATE_PATH="install_template_files"
+INSTALL_TEMPLATE_PATH_LOCAL="/tmp/install_template_files"
 NGINX_CONF_PATH="/etc/nginx/conf.d"
 SYSTEMD_CONF_PATH="/etc/systemd/system"
 REPO_PATH="/etc/yum.repos.d"
 
-SS_HOSTNAME=${1:-"example.jp"}
-SS_USER=${2:-"$USER"}
+#SS_HOSTNAME=${1:-"example.jp"}
+#SS_USER=${2:-"$USER"}
+SS_HOSTNAME=""
+SS_USER="shirasagi"
 SS_DIR="/var/www/${PROG_NAME}"
+RVM_HOME=/usr/local/rvm
+SS_DIR_FOR_SED="\/var\/www\/${PROG_NAME}"
+RVM_HOME_SED="\/usr\/local\/rvm"
 
 #### ports
 
@@ -178,6 +184,7 @@ check_function_succeeded()
 {
     local comm
     comm=$1
+    $(${comm})
     if [ $? -eq 0 ]; then
         echo "'$comm' succeeded"
     else
@@ -197,6 +204,23 @@ clean_build_dir()
     else
         echo "'$comm' failed"
         err_msg
+    fi
+}
+
+# ask domain name 
+
+ask_domain_name()
+{
+    local ans=""
+    SS_HOSTNAME="example.jp"
+    echo -n "Set domain name [example.jp]:"
+    read ans
+    ## just trim white space
+    echo ${ans} | xargs >/dev/null
+    if [ ! "${ans}" ]; then
+        SS_HOSTNAME=${SS_HOSTNAME}
+    else
+        SS_HOSTNAME=${ans}
     fi
 }
 
@@ -231,6 +255,13 @@ COM_28="firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent"
 COM_29="firewall-cmd --reload"
 COM_30="rm -rf ${SS_DIR}/BUILD"
 COM_31="make"
+COM_32="cp ${INSTALL_TEMPLATE_PATH_LOCAL}/httpd.conf ${NGINX_CONF_PATH}"
+COM_33="cp ${INSTALL_TEMPLATE_PATH_LOCAL}/header.conf ${NGINX_CONF_PATH}" 
+COM_34_1="mkdir ${NGINX_CONF_PATH}/common" 
+COM_34_2="mkdir ${NGINX_CONF_PATH}/server" 
+COM_35="cp ${INSTALL_TEMPLATE_PATH_LOCAL}/drop.conf ${NGINX_CONF_PATH}/common"
+COM_36="cp ${INSTALL_TEMPLATE_PATH_LOCAL}/virtual.conf ${NGINX_CONF_PATH}"
+COM_99="useradd -s /sbin/nologin shirasagi"
 ##################### end functions ###################
 
 #### make log file and logs in root directory
@@ -239,7 +270,7 @@ mklog
 
 #### make install template directory
 
-mkdir "${INSTALL_TEMPLATE_PATH}"
+mkdir "${INSTALL_TEMPLATE_PATH_LOCAL}"
 
 #### echo installer 
 echo_installer
@@ -275,28 +306,118 @@ else
     err_msg
 fi
 
-#### installing packages which is not installed on the box
+#### ask domain name
+
+while :
+do
+    ask_domain_name
+    echo -n "Are you sure setting domain name to '${SS_HOSTNAME}' ? :[y/N]"
+    read ans
+    case $ans in
+    [yY]) 
+        break;;
+    [nN]) 
+        echo ""
+        ;;
+    *) 
+        echo "Type y or n"
+    esac
+done
+
+echo "Domain name will be set to \"${SS_HOSTNAME}\""
+
+#### adding shirasagi user
+
+echo "######## Adding user shirasagi ########"
+
+check_function_succeeded "${COM_99}"
+
+#### repo file for mongodb (note using EOF)
+
+cat > ${REPO_PATH}/mongodb-org-${MONGODB_VERSION}.repo <<EOF
+[mongodb-org-${MONGODB_VERSION}]
+name=MongoDB Repository
+baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/${MONGODB_VERSION}/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://www.mongodb.org/static/pgp/server-${MONGODB_VERSION}.asc
+EOF
+
+#### repo file for Nginx (note using "EOF")
+
+cat > ${REPO_PATH}/nginx.repo <<"EOF"
+[nginx]
+name=nginx repo
+baseurl=http://nginx.org/packages/centos/$releasever/$basearch/
+gpgcheck=0
+enabled=1
+EOF
+
+#### now, repo files are set, installing packages which is not installed on the box
+
+echo "######## Installing needed packages on the box ########"
 
 yum -y install $(check_rpms "${PACKAGES[@]}")
 
-#### installing template files on the box 
+#### check all needed packages are present, else exit
 
-pushd ${INSTALL_TEMPLATE_PATH}
+echo "######## Check needed packages are installed on the box ########"
+
+for i in ${PACKAGES[@]}
+do
+    rpm -q ${i} >/dev/null
+    if [ $? -ne 0 ]; then
+        echo "${i}" is not installed
+        err_msg
+    fi
+done
+echo "######## All needed packages are install on this box ########"
+
+#### installing template files on the box (wget should be installed before here) 
+
+echo "######## Installing template files on the box ########"
+
+pushd ${INSTALL_TEMPLATE_PATH_LOCAL}
     for i in "${INSTALL_FILES[@]}"
     do
         wget https://raw.githubusercontent.com/intrajp/shirasagi-hardening/master/${INSTALL_TEMPLATE_PATH}/${i}
     done
 popd
 
-#### repo file for mongodb
+#### prepare for nginx
 
-cp ${INSTALL_TEMPLATE_PATH}/mongodb-org-MONGODB-VERSION.repo ${REPO_PATH}
-sed -i "s/MONGODB-VERSION/${MONGODB_VERSION}/g" ${REPO_PATH}/mongodb-org-MONGODB-VERSION.repo
-mv ${REPO_PATH}/mongodb-org-MONGODB-VERSION.repo ${REPO_PATH}/mongodb-org-${MONGODB_VERSION}.repo
+check_function_succeeded "${COM_32}"
+check_function_succeeded "${COM_33}"
+check_function_succeeded "${COM_34_1}"
+check_function_succeeded "${COM_34_2}"
+check_function_succeeded "${COM_35}"
+check_function_succeeded "${COM_36}"
 
-#### repo file for Nginx
+echo "######## Directory check ########"
+if [ ! -d ${NGINX_CONF_PATH} ] ; then
+    echo "${NGINX_CONF_PATH} does not exist"
+    err_msg
+else
+    if [ ! -d ${NGINX_CONF_PATH}/common ]; then
+        echo "${NGINX_CONF_PATH}/common does not exist"
+        err_msg
+    else
+        if [ ! -d ${NGINX_CONF_PATH}/server ]; then
+            echo "${NGINX_CONF_PATH}/server does not exist"
+            err_msg
+        else
+            echo "######## Directory check passed ########"
+        fi
+    fi
+fi
 
-cp ${INSTALL_TEMPLATE_PATH}/nginx.repo ${REPO_PATH}
+sed -i "s/SS-HOSTNAME/${SS_HOSTNAME}/g" ${NGINX_CONF_PATH}/virtual.conf
+sed -i "s/PORT-COMPA/${PORT_COMPA}/g" ${NGINX_CONF_PATH}/virtual.conf
+sed -i "s/PORT-CHILD/${PORT_CHILD}/g" ${NGINX_CONF_PATH}/virtual.conf
+sed -i "s/PORT-OPEND/${PORT_OPEND}/g" ${NGINX_CONF_PATH}/virtual.conf
+sed -i "s/SS-DIR/${SS_DIR_FOR_SED}/g" ${NGINX_CONF_PATH}/virtual.conf
+
+echo "######## ${NGINX_CONF_PATH}/virtual.conf set finishted ########"
 
 #### getting gpg key
 
@@ -309,12 +430,15 @@ do
   sleep 5s
 done
 
-#### setting something, dont konw what it is 
+#### getting rvm 
+
+echo "######## getting rvm ########"
 
 \curl -sSL https://get.rvm.io | bash -s stable
-RVM_HOME=/usr/local/rvm
 
 #### installing rvm
+
+echo "######## installing rvm ########"
 
 export PATH="$PATH:$RVM_HOME/bin"
 source $RVM_HOME/scripts/rvm
@@ -323,6 +447,8 @@ rvm use 2.3.4 --default
 gem install bundler
 
 #### cloning shirasagi-hardening and coping files to dir
+
+echo "######## Now cloning shirasagi-hardening and coping them to ${SS_DIR} ########"
 
 git clone --depth 1 https://github.com/intrajp/${PROG_NAME}
 mkdir -p /var/www
@@ -350,6 +476,9 @@ sed -i "s/dbcae379.*$/`bundle exec rake secret`/" config/secrets.yml
 sed -e "s/disable: true$/disable: false/" config/defaults/recommend.yml > config/recommend.yml
 
 #### Furigana
+
+echo "######## Fufigana stuff ########"
+
 mkdir BUILD
 
 pushd BUILD
@@ -359,40 +488,38 @@ wget -O mecab-ipadic-2.7.0-20070801.tar.gz "https://drive.google.com/uc?export=d
 wget -O mecab-ruby-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7VUNlczBWVDZJbE0"
 wget https://raw.githubusercontent.com/shirasagi/shirasagi/stable/vendor/mecab/mecab-ipadic-2.7.0-20070801.patch
 
+echo "######## mecab ########"
+
 tar xvzf mecab-0.996.tar.gz
-
 pushd mecab-0.996
-
 ./configure --enable-utf8-only
-#make
-${COM_31}
-check_function_succeeded "${COM_31}"
+make
 make install
 
 popd
+
+echo "######## mecab-ipadic-2.7.0-20070801 ########"
 
 tar xvzf mecab-ipadic-2.7.0-20070801.tar.gz
-
 pushd mecab-ipadic-2.7.0-20070801
-
 patch -p1 < ../mecab-ipadic-2.7.0-20070801.patch
 ./configure --with-charset=UTF-8
-#make
-${COM_31}
-check_function_succeeded "${COM_31}"
+make
 make install
 
 popd
+
+echo "######## mecab-ruby-0.996 ########"
 
 tar xvzf mecab-ruby-0.996.tar.gz
 pushd mecab-ruby-0.996
 ruby extconf.rb
-#make
-${COM_31}
-check_function_succeeded "${COM_31}"
+make
 make install
 
 popd
+
+echo "######## ldconfig ########"
 
 cat >> /etc/ld.so.conf << "EOF"
 /usr/local/lib
@@ -401,7 +528,11 @@ EOF
 ldconfig
 
 #### Voice
+
+echo "######## Voice stuff ########"
+
 popd
+
 pushd BUILD
 
 wget http://downloads.sourceforge.net/hts-engine/hts_engine_API-1.08.tar.gz \
@@ -409,88 +540,73 @@ wget http://downloads.sourceforge.net/hts-engine/hts_engine_API-1.08.tar.gz \
   http://downloads.sourceforge.net/lame/lame-3.99.5.tar.gz \
   http://downloads.sourceforge.net/sox/sox-14.4.1.tar.gz
 
+echo "######## hts_engine_API-1.08 ########"
+
 tar xvzf hts_engine_API-1.08.tar.gz
 pushd hts_engine_API-1.08
 ./configure
-#make
-${COM_31}
-check_function_succeeded "${COM_31}"
+make
 make install
 
 popd
 
+echo "######## open_jtalk-1.07 ########"
 tar xvzf open_jtalk-1.07.tar.gz
 pushd open_jtalk-1.07
 sed -i "s/#define MAXBUFLEN 1024/#define MAXBUFLEN 10240/" bin/open_jtalk.c
 sed -i "s/0x00D0 SPACE/0x000D SPACE/" mecab-naist-jdic/char.def
 ./configure --with-charset=UTF-8
-#make
-${COM_31}
-check_function_succeeded "${COM_31}"
+make
 make install
 
 popd
 
+echo "######## lame-3.99.5 ########"
 tar xvzf lame-3.99.5.tar.gz
 pushd lame-3.99.5
 ./configure
-#make
-${COM_31}
-check_function_succeeded "${COM_31}"
+make
 make install
 
 popd
 
+echo "######## sox-14.4.1 ########"
 tar xvzf sox-14.4.1.tar.gz
 pushd sox-14.4.1
 ./configure
-#make
-${COM_31}
-check_function_succeeded "${COM_31}"
+make
 make install
 
 popd
+
+echo "######## ldconfig ########"
 
 ldconfig
 
 popd
 
-#### setting nginx
+#### setting shirasagi.conf 
 
-cp ${INSTALL_TEMPLATE_PATH}/httpd.conf ${NGINX_CONF_PATH} 
-
-cp ${INSTALL_TEMPLATE_PATH}/header.conf ${NGINX_CONF_PATH} 
-
-mkdir ${NGINX_CONF_PATH}/{common,server}
-
-cp ${INSTALL_TEMPLATE_PATH}/drop.conf ${NGINX_CONF_PATH}/common
-
-cp ${INSTALL_TEMPLATE_PATH}/virtual.conf ${NGINX_CONF_PATH}/conf.d
-
-sed -i "s/SS-HOSTNAME/${SS_HOSTNAME}/g" ${NGINX_CONF_PATH}/virtual.conf
-sed -i "s/PORT-COMPA/${PORT_COMPA}}/g" ${NGINX_CONF_PATH}/virtual.conf
-sed -i "s/PORT-CHILD/${PORT_CHILD}}/g" ${NGINX_CONF_PATH}/virtual.conf
-sed -i "s/PORT-OPEND/${PORT_OPEND}}/g" ${NGINX_CONF_PATH}/virtual.conf
-sed -i "s/SS-DIR/${SS_DIR}}/g" ${NGINX_CONF_PATH}/virtual.conf
+echo "######## setting shirasagi.conf ########"
 
 cp ${INSTALL_TEMPLATE_PATH}/shirasagi.conf ${NGINX_CONF_PATH}/server
-sed -i "s/SS-DIR/${SS_DIR}}/g" ${NGINX_CONF_PATH}/shirasagi.conf
+sed -i "s/SS-DIR/${SS_DIR_FOR_SED}/g" ${NGINX_CONF_PATH}/server/shirasagi.conf
 
 cp ${INSTALL_TEMPLATE_PATH}/shirasagi-unicorn.service ${SYSTEMD_CONF_PATH} 
-sed -i "s/SS-DIR/${SS_DIR}}/g" ${SYSTEMD_CONF_PATH}/shirasagi-unicorn.service
-sed -i "s/SS-USER/${SS_USER}}/g" ${SYSTEMD_CONF_PATH}/shirasagi-unicorn.service
-sed -i "s/RVM-HOME/${RVM_HOME}}/g" ${SYSTEMD_CONF_PATH}/shirasagi-unicorn.service
+sed -i "s/SS-DIR/${SS_DIR_FOR_SED}/g" ${SYSTEMD_CONF_PATH}/shirasagi-unicorn.service
+sed -i "s/SS-USER/${SS_USER}/g" ${SYSTEMD_CONF_PATH}/shirasagi-unicorn.service
+sed -i "s/RVM-HOME/${RVM_HOME_SED}/g" ${SYSTEMD_CONF_PATH}/shirasagi-unicorn.service
 
 #### daemonize
+
+echo "######## daemonize the thing ########"
 
 chown root: /etc/systemd/system/shirasagi-unicorn.service
 chmod 644 /etc/systemd/system/shirasagi-unicorn.service
 
 #### start mongod and enable it 
 
-${COM_1}
 check_function_succeeded "${COM_1}"
-${COM_2}
 check_function_succeeded "${COM_2}"
 
 #### SELinux needs to httpd_t 
@@ -498,7 +614,9 @@ check_function_succeeded "${COM_2}"
 #Modify the port type.
 #where PORT_TYPE is one of the following: ntop_port_t, http_cache_port_t, http_port_t.
 #here we go
-#set each port if aready set,modify it
+#set each port and if aready set, modify it
+
+echo "######## Setting SELinux port ########"
 
 for i in $(seq 1 3)
 do
@@ -525,55 +643,41 @@ done
 
 #### enable nginx 
 
-${COM_3}
+echo "######## Enable nginx ########"
+
 check_function_succeeded "${COM_3}"
 
 #### enable shirasagi-unicorn 
 
-${COM_4}
 check_function_succeeded "${COM_4}"
 
 #### taking changed configurations from filesystem and regenerationg dependency trees 
 
-${COM_5}
 check_function_succeeded "${COM_5}"
 
 #### start nginx
 
-${COM_6}
+echo "######## Start nginx ########"
+
 check_function_succeeded "${COM_6}"
 
 cd $SS_DIR
-${COM_7}
 check_function_succeeded "${COM_7}"
-${COM_8}
 check_function_succeeded "${COM_8}"
 bundle exec rake ss:create_site data="{ name: \"自治体サンプル\", host: \"www\", domains: \"${SS_HOSTNAME}\" }"
-#${COM_9}
-check_function_succeeded "${COM_9}"
 bundle exec rake ss:create_site data="{ name: \"企業サンプル\", host: \"company\", domains: \"${SS_HOSTNAME}:${PORT_COMPA}\" }"
-#${COM_10}
-check_function_succeeded "${COM_10}"
 bundle exec rake ss:create_site data="{ name: \"子育て支援サンプル\", host: \"childcare\", domains: \"${SS_HOSTNAME}:${PORT_CHILD}\" }"
-#${COM_11}
-check_function_succeeded "${COM_11}"
 bundle exec rake ss:create_site data="{ name: \"オープンデータサンプル\", host: \"opendata\", domains: \"${SS_HOSTNAME}:${PORT_OPEND}\" }"
-#${COM_12}
-check_function_succeeded "${COM_12}"
-${COM_13}
 check_function_succeeded "${COM_13}"
-${COM_14}
 check_function_succeeded "${COM_14}"
-${COM_15}
 check_function_succeeded "${COM_15}"
-${COM_16}
 check_function_succeeded "${COM_16}"
-${COM_17}
 check_function_succeeded "${COM_17}"
-${COM_18}
 check_function_succeeded "${COM_18}"
 
 #### start shirasagi-unicorn
+
+echo "######## Start shirasagi-unicorn ########"
 
 ${COM_19}
 check_function_succeeded "${COM_19}"
@@ -581,15 +685,13 @@ check_function_succeeded "${COM_19}"
 # use openlayers as default map
 echo 'db.ss_sites.update({}, { $set: { map_api: "openlayers" } }, { multi: true });' | mongo ss > /dev/null
 
-${COM_20}
 check_function_succeeded "${COM_20}"
-${COM_21}
 check_function_succeeded "${COM_21}"
 
 cp ${INSTALL_TEMPLATE_PATH}/crontab ${SYSTEMD_CONF_PATH} 
 
-sed -i "s/SS-DIR/${SS_DIR}}/g" ${INSTALL_TEMPLATE_PATH}/crontab
-sed -i "s/RVM-HOME/${RVM_HOME}}/g" ${INSTALL_TEMPLATE_PATH}/crontab
+sed -i "s/SS-DIR/${SS_DIR}/g" ${INSTALL_TEMPLATE_PATH}/crontab
+sed -i "s/RVM-HOME/${RVM_HOME}/g" ${INSTALL_TEMPLATE_PATH}/crontab
 
 # modify ImageMagick policy to work with simple captcha
 # see: https://github.com/diaspora/diaspora/issues/6828
@@ -609,26 +711,22 @@ cd /etc/ImageMagick && cat << EOF | patch
 EOF
 
 #### restarting services
-${COM_22}
+
+echo "######## Restarting services ########"
+
 check_function_succeeded "${COM_22}"
-${COM_23}
 check_function_succeeded "${COM_23}"
-${COM_24}
 check_function_succeeded "${COM_24}"
 
 #### firewalld stuff
 
-${COM_25}
+echo "######## Firewalld stuff ########"
+
 check_function_succeeded "${COM_25}"
-${COM_26}
 check_function_succeeded "${COM_26}"
-${COM_27}
 check_function_succeeded "${COM_27}"
-${COM_28}
 check_function_succeeded "${COM_28}"
-${COM_29}
 check_function_succeeded "${COM_29}"
-${COM_30}
 check_function_succeeded "${COM_30}"
 
 #### echo installer finished

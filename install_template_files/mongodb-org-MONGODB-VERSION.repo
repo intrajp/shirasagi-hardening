@@ -1,6 +1,0 @@
-[mongodb-org-MONGODB-VERSION]
-name=MongoDB Repository
-baseurl=https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/MONGODB-VERSION/x86_64/
-gpgcheck=1
-enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/server-MONGODB-VERSION.asc
