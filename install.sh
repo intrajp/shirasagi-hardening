@@ -242,7 +242,7 @@ mklog
 mkdir "${INSTALL_TEMPLATE_PATH}"
 
 pushd ${INSTALL_TEMPLATE_PATH}
-    for in "${INSTALL_FILES[@]}"
+    for i in "${INSTALL_FILES[@]}"
     do
         curl https://raw.githubusercontent.com/intrajp/shirasagi-hardening/master/${INSTALL_TEMPLATE_PATH}/${i}
     done
