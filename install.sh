@@ -241,13 +241,6 @@ mklog
 
 mkdir "${INSTALL_TEMPLATE_PATH}"
 
-pushd ${INSTALL_TEMPLATE_PATH}
-    for i in "${INSTALL_FILES[@]}"
-    do
-        curl https://raw.githubusercontent.com/intrajp/shirasagi-hardening/master/${INSTALL_TEMPLATE_PATH}/${i}
-    done
-popd
-
 #### echo installer 
 echo_installer
 
@@ -282,6 +275,19 @@ else
     err_msg
 fi
 
+#### installing packages which is not installed on the box
+
+yum -y install $(check_rpms "${PACKAGES[@]}")
+
+#### installing template files on the box 
+
+pushd ${INSTALL_TEMPLATE_PATH}
+    for i in "${INSTALL_FILES[@]}"
+    do
+        wget https://raw.githubusercontent.com/intrajp/shirasagi-hardening/master/${INSTALL_TEMPLATE_PATH}/${i}
+    done
+popd
+
 #### repo file for mongodb
 
 cp ${INSTALL_TEMPLATE_PATH}/mongodb-org-MONGODB-VERSION.repo ${REPO_PATH}
@@ -292,10 +298,6 @@ mv ${REPO_PATH}/mongodb-org-MONGODB-VERSION.repo ${REPO_PATH}/mongodb-org-${MONG
 
 cp ${INSTALL_TEMPLATE_PATH}/nginx.repo ${REPO_PATH}
 
-#### installing packages which is not installed on the box
-
-yum -y install $(check_rpms "${PACKAGES[@]}")
-	
 #### getting gpg key
 
 for i in $(seq 1 3)
