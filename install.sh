@@ -3,7 +3,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2014 SHIRASAGI Project
-# Copyright (C) Shintaro Fujiwara
+# Copyright (C) 2017 Shintaro Fujiwara
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -57,6 +57,8 @@ SS_DIR_FOR_SED="\/var\/www\/${PROG_NAME}"
 RVM_HOME_SED="\/usr\/local\/rvm"
 
 #### ports
+## TODO
+## Best Practice:found port 8002 is already set by other program, but modify it later
 
 PORT_COMPA=8001
 PORT_CHILD=8002
@@ -262,6 +264,8 @@ COM_34_2="mkdir ${NGINX_CONF_PATH}/server"
 COM_35="cp ${INSTALL_TEMPLATE_PATH_LOCAL}/drop.conf ${NGINX_CONF_PATH}/common"
 COM_36="cp ${INSTALL_TEMPLATE_PATH_LOCAL}/virtual.conf ${NGINX_CONF_PATH}"
 COM_99="useradd -s /sbin/nologin shirasagi"
+COM_100="rm -rf ${INSTALL_TEMPLATE_PATH_LOCAL}"
+COM_101="rm -rf ${SS_DIR}/BUILD"
 ##################### end functions ###################
 
 #### make log file and logs in root directory
@@ -448,7 +452,7 @@ gem install bundler
 
 #### cloning shirasagi-hardening and coping files to dir
 
-echo "######## Now cloning shirasagi-hardening and coping them to ${SS_DIR} ########"
+echo "######## Now cloning ${PROG_NAME} and coping them to ${SS_DIR} ########"
 
 git clone --depth 1 https://github.com/intrajp/${PROG_NAME}
 mkdir -p /var/www
@@ -728,6 +732,13 @@ check_function_succeeded "${COM_27}"
 check_function_succeeded "${COM_28}"
 check_function_succeeded "${COM_29}"
 check_function_succeeded "${COM_30}"
+
+#### cleaning up 
+
+echo "######## Cleaning up ########"
+
+check_function_succeeded "${COM_100}"
+check_function_succeeded "${COM_101}"
 
 #### echo installer finished
 echo_installer_finished
