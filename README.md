@@ -47,10 +47,15 @@ $ cat install.sh
 # bash install.sh
 
 -- Check the script has finished.--
+
   Echo string when installation succeeded: 
-     - shirasagi installer finished
+
+     "shirasagi installer finished"
+
   Echo string when installation failed: 
-     - Oops! Something went wrong!
+
+     "Oops! Something went wrong!"
+
   Anyways, check install log file in the current directory "install-log_YYmmddHHMMSS" for detail.
 ```
 
