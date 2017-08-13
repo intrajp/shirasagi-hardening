@@ -37,8 +37,18 @@ Installation (Auto)
 - Set parameter "example.jp" as domain-name or IP address.<br />
 
 ```
-$ curl https://raw.githubusercontent.com/intrajp/shirasagi-hardening/master/install.sh > install.sh
+-- Download the install script --
+$ curl -sO https://raw.githubusercontent.com/intrajp/shirasagi-hardening/master/install.sh
+-- Please check the contents --
+$ cat install.sh
+-- Execute the cript as root --
 # bash install.sh
+-- Please check the script has finished.--
+Installation succeeded: 
+    shirasagi installer finished
+Installation failed: 
+    Oops! Something went wrong!
+Anyways, check install log file in the current directory "install-log_YYmmddHHMMSS" for detail.
 ```
 
 ## Check the site 
