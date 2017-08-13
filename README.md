@@ -39,7 +39,6 @@ Installation (Auto)
 ```
 $ curl https://raw.githubusercontent.com/intrajp/shirasagi-hardening/master/install.sh > install.sh
 # bash install.sh
-
 ```
 
 ## Check the site 
