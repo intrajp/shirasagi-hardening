@@ -1,8 +1,0 @@
-<% return unless @cur_node.gpf_enabled? %>
-
-<dl class="column">
-  <dt><%= I18n.t('board.views.gpf') %></dt>
-  <dd>
-    <%== I18n.t('board.views.gpf_delete_info_html', url: @item.gpf_url) %>
-  </dd>
-</dl>

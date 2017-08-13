@@ -1,1 +1,0 @@
-<li class="#{currnet}"><a href="#{url}">#{index_name}</a></li>

@@ -1,1 +1,0 @@
-<li class="#{current}"><a href="#{url}">#{index_name}</a></li>
