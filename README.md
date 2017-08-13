@@ -37,7 +37,9 @@ Installation (Auto)
 - Set parameter "example.jp" as domain-name or IP address.<br />
 
 ```
-# curl https://raw.githubusercontent.com/intrajp/shirasagi-hardening/master/install.sh | bash
+$ curl https://raw.githubusercontent.com/intrajp/shirasagi-hardening/master/install.sh > install.sh
+# bash install.sh
+
 ```
 
 ## Check the site 
