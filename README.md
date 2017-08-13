@@ -38,12 +38,15 @@ Installation (Auto)
 
 ```
 -- Download the install script --
+
 $ curl -sO https://raw.githubusercontent.com/intrajp/shirasagi-hardening/master/install.sh
 
 -- Check the contents --
+
 $ cat install.sh
 
 -- Execute the cript as root --
+
 # bash install.sh
 
 -- Check the script has finished.--
