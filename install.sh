@@ -96,7 +96,7 @@ echo_installer()
 echo_installer_finished()
 {
     echo "########"
-    echo "${PROG_NAME} installer finished"
+    echo "${PROG_NAME} installer has finished"
     echo "check install log file $LOGFILE for detail"
     echo "########"
 }

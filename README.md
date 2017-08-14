@@ -53,7 +53,7 @@ $ cat install.sh
 
   Echo string when installation succeeded: 
 
-     "shirasagi installer finished"
+     "shirasagi installer has finished"
 
   Echo string when installation failed: 
 
