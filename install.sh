@@ -224,12 +224,12 @@ ask_domain_name()
     fi
 }
 
-COM_1="systemctl start mongod.service"
-COM_2="systemctl enable mongod.service"
-COM_3="systemctl enable nginx.service"
-COM_4="systemctl enable shirasagi-unicorn.service"
-COM_5="systemctl daemon-reload"
-COM_6="systemctl start nginx.service"
+SYSTEMCTL_START_MONGOD="systemctl start mongod.service"
+SYSTEMCTL_ENABLE_MONGOD="systemctl enable mongod.service"
+SYSTEMCTL_ENABLE_NGINX="systemctl enable nginx.service"
+SYSTEMCTL_ENABLE_SHIRASAGI_UNICORN="systemctl enable shirasagi-unicorn.service"
+SYSTEMCTL_DAEMON_RELOAD="systemctl daemon-reload"
+SYSTEMCTL_START_NGINX="systemctl start nginx.service"
 COM_7="bundle exec rake db:drop"
 COM_8="bundle exec rake db:create_indexes"
 COM_9="bundle exec rake ss:create_site data=\"{ name: \"自治体サンプル\", host: \"www\", domains: \"${SS_HOSTNAME}\" }\""
@@ -242,18 +242,18 @@ COM_15="bundle exec rake db:seed name=childcare site=childcare"
 COM_16="bundle exec rake db:seed name=opendata site=opendata"
 COM_17="bundle exec rake db:seed name=gws"
 COM_18="bundle exec rake db:seed name=webmail"
-COM_19="systemctl start shirasagi-unicorn.service"
+SYSTEMCTL_START_SHIRASAGI_UNICORN="systemctl start shirasagi-unicorn.service"
 COM_20="bundle exec rake cms:generate_nodes"
 COM_21="bundle exec rake cms:generate_pages"
-COM_22="systemctl restart nginx.service"
-COM_23="systemctl restart mongod.service"
-COM_24="systemctl restart shirasagi-unicorn.service"
-COM_25="firewall-cmd --add-port=http/tcp --permanent"
-COM_26="firewall-cmd --add-port=${PORT_COMPA}/tcp --permanent"
-COM_27="firewall-cmd --add-port=${PORT_CHILD}/tcp --permanent"
-COM_28="firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent"
-COM_29="firewall-cmd --reload"
-COM_30="rm -rf ${SS_DIR}/BUILD"
+SYSTEMCTL_RESTART_NGINX="systemctl restart nginx.service"
+SYSTEMCTL_RESTART_MONGOD="systemctl restart mongod.service"
+SYSTEMCTL_RESTART_SHIRASAGI_UNICORN="systemctl restart shirasagi-unicorn.service"
+FIREWALL_CMD_ADD_PORT_HTTP_TCP="firewall-cmd --add-port=http/tcp --permanent"
+FIREWALL_CMD_ADD_PORT_PORT_COMPA="firewall-cmd --add-port=${PORT_COMPA}/tcp --permanent"
+FIREWALL_CMD_ADD_PORT_PORT_CHILD="firewall-cmd --add-port=${PORT_CHILD}/tcp --permanent"
+FIREWALL_CMD_ADD_PORT_PORT_OPEND="firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent"
+FIREWALL_CMD_RELOAD="firewall-cmd --reload"
+RM_RF_BUILD="rm -rf ${SS_DIR}/BUILD"
 ##################### end functions ###################
 
 #### make log file and logs in root directory
@@ -353,14 +353,14 @@ echo "######## All needed packages are install on this box ########"
 
 #### start mongod and enable it 
 
-check_command_succeeded "${COM_1}"
-check_command_succeeded "${COM_2}"
+check_command_succeeded "${SYSTEMCTL_START_MONGOD}"
+check_command_succeeded "${SYSTEMCTL_ENABLE_MONGOD}"
 
 #### enable nginx
 
 echo "######## Enable nginx ########"
 
-check_command_succeeded "${COM_3}"
+check_command_succeeded "${SYSTEMCTL_ENABLE_NGINX}"
 
 #### SELinux needs to httpd_t 
 #Allow /usr/sbin/httpd to bind to network port <PORT> 
@@ -396,7 +396,7 @@ done
 
 echo "######## Start nginx ########"
 
-check_command_succeeded "${COM_6}"
+check_command_succeeded "${SYSTEMCTL_START_NGINX}"
 
 #### getting gpg key
 
@@ -708,11 +708,11 @@ chmod 644 /etc/systemd/system/shirasagi-unicorn.service
 
 #### enable shirasagi-unicorn 
 
-check_command_succeeded "${COM_4}"
+check_command_succeeded "${SYSTEMCTL_ENABLE_SHIRASAGI_UNICORN}"
 
 #### taking changed configurations from filesystem and regenerationg dependency trees 
 
-check_command_succeeded "${COM_5}"
+check_command_succeeded "${SYSTEMCTL_DAEMON_RELOAD}"
 
 cd $SS_DIR
 bundle exec rake db:drop
@@ -730,7 +730,7 @@ bundle exec rake db:seed name=webmail
 
 #### start shirasagi-unicorn
 
-check_command_succeeded "${COM_19}"
+check_command_succeeded "${SYSTEMCTL_START_SHIRASAGI_UNICORN}"
 
 # use openlayers as default map
 echo 'db.ss_sites.update({}, { $set: { map_api: "openlayers" } }, { multi: true });' | mongo ss > /dev/null
@@ -761,24 +761,24 @@ cd /etc/ImageMagick && cat << EOF | patch
 EOF
 
 #### restarting services
-check_command_succeeded "${COM_22}"
-check_command_succeeded "${COM_23}"
-check_command_succeeded "${COM_24}"
+check_command_succeeded "${SYSTEMCTL_RESTART_NGINX}"
+check_command_succeeded "${SYSTEMCTL_RESTART_MONGOD}"
+check_command_succeeded "${SYSTEMCTL_RESTART_SHIRASAGI_UNICORN}"
 
 #### firewalld stuff
 
-echo "'${COM_25}'"
+echo "${FIREWALL_CMD_ADD_PORT_HTTP_TCP}"
 firewall-cmd --add-port=http/tcp --permanent
-echo "'${COM_26}'"
+echo "${FIREWALL_CMD_ADD_PORT_PORT_COMPA}"
 firewall-cmd --add-port=${PORT_COMPA}/tcp --permanent
-echo "'${COM_27}'"
+echo "${FIREWALL_CMD_ADD_PORT_PORT_CHILD}"
 firewall-cmd --add-port=${PORT_CHILD}/tcp --permanent
-echo "'${COM_28}'"
+echo "${FIREWALL_CMD_ADD_PORT_PORT_OPEND}"
 firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent
-echo "'${COM_29}'"
+echo "${FIREWALL_CMD_RELOAD}"
 firewall-cmd --reload
 
-check_command_succeeded "${COM_30}"
+check_command_succeeded "${RM_RF_BUILD}"
 
 #### echo installer finished
 echo_installer_finished
