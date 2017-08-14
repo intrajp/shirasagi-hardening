@@ -45,7 +45,7 @@ $ curl -sO https://raw.githubusercontent.com/intrajp/shirasagi-hardening/master/
 
 $ cat install.sh
 
--- Execute the cript as root --
+-- Execute the script as root --
 
 # bash install.sh
 
@@ -59,7 +59,7 @@ $ cat install.sh
 
      "Oops! Something went wrong!"
 
-  Anyways, check install log file in the current directory "install-log_YYmmddHHMMSS" for detail.
+  Anyways, check install-log file in the current directory "install-log_YYmmddHHMMSS" for detail.
 ```
 
 ## Check the site 
