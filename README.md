@@ -74,7 +74,7 @@ Clicking the link as site name, you can check or edit the registered demo data.<
 
 http://localhost:3000/ will show demo site registered.
 
-## develop and test environment
+## Develop and test environment
 
 `.env` file in project root will set configuration as you wish
 (How to set configuration)
