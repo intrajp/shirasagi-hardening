@@ -51,6 +51,10 @@ PORT_COMPA=8001
 PORT_CHILD=8002
 PORT_OPEND=8003
 
+#### script directory 
+
+SCRIPT_DIR="/tmp"
+
 #### logfile
 
 NOW=`date +%Y%m%d%H%M%S`
@@ -59,7 +63,7 @@ LOGFILE="${PROG_NAME}_install-log_${NOW}.log"
 #### check rpms which is not instlled on the box
 
 RPMS_TO_BE_INSTALLED=()
-PACKAGES=("policycoreutils-python" "mongodb-org" "nginx" "gcc" "gcc-c++" "glibc-headers" "openssl-devel" "readline" "libyaml-devel" "readline-devel" "zlib" "zlib-devel" "wget" "git" "ImageMagick" "ImageMagick-devel")
+PACKAGES=("policycoreutils-python" "mongodb-org" "nginx" "gcc" "gcc-c++" "glibc-headers" "openssl-devel" "readline" "libyaml-devel" "readline-devel" "zlib" "zlib-devel" "wget" "git" "ImageMagick" "ImageMagick-devel" "firefox")
 
 ##################### end .config ###################
 
@@ -93,11 +97,11 @@ echo_installer()
 
 # echo installer finished 
 
-echo_installer_finished()
+echo_installer_has_finished()
 {
     echo "########"
     echo "${PROG_NAME} installer has finished"
-    echo "check install log file $LOGFILE for detail"
+    echo "check install log file ${LOGFILE} in ${SCRIPT_DIR}for detail"
     echo "########"
 }
 
@@ -179,6 +183,8 @@ check_command_succeeded()
     fi
 }
 
+# check function succeeded (pattern 2, not used)
+
 try_command_multiple_times()
 {
     local comm
@@ -193,7 +199,7 @@ try_command_multiple_times()
     fi
 }
 
-# clean the BUILD directory 
+# clean the BUILD directory (not used) 
 
 clean_build_dir()
 {
@@ -239,24 +245,10 @@ FIREWALL_CMD_ADD_PORT_PORT_COMPA="firewall-cmd --add-port=${PORT_COMPA}/tcp --pe
 FIREWALL_CMD_ADD_PORT_PORT_CHILD="firewall-cmd --add-port=${PORT_CHILD}/tcp --permanent"
 FIREWALL_CMD_ADD_PORT_PORT_OPEND="firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent"
 FIREWALL_CMD_RELOAD="firewall-cmd --reload"
-RM_RF_BUILD="rm -rf ${SS_DIR}/BUILD"
-COM_7="bundle exec rake db:drop"
-COM_8="bundle exec rake db:create_indexes"
-COM_9="bundle exec rake ss:create_site data=\"{ name: \"自治体サンプル\", host: \"www\", domains: \"${SS_HOSTNAME}\" }\""
-COM_10="bundle exec rake ss:create_site data=\"{ name: \"企業サンプル\", host: \"company\", domains: \"${SS_HOSTNAME}:${PORT_COMPA}\" }\""
-COM_11="bundle exec rake ss:create_site data=\"{ name: \"子育て支援サンプル\", host: \"childcare\", domains: \"${SS_HOSTNAME}:${PORT_CHILD}\" }\""
-COM_12="bundle exec rake ss:create_site data=\"{ name: \"オープンデータサンプル\", host: \"opendata\", domains: \"${SS_HOSTNAME}:${PORT_OPEND}\" }\""
-COM_13="bundle exec rake db:seed name=demo site=www"
-COM_14="bundle exec rake db:seed name=company site=company"
-COM_15="bundle exec rake db:seed name=childcare site=childcare"
-COM_16="bundle exec rake db:seed name=opendata site=opendata"
-COM_17="bundle exec rake db:seed name=gws"
-COM_18="bundle exec rake db:seed name=webmail"
-COM_20="bundle exec rake cms:generate_nodes"
-COM_21="bundle exec rake cms:generate_pages"
 ##################### end functions ###################
 
 #### make log file and logs in root directory
+pushd "${SCRIPT_DIR}"
 
 mklog
 
@@ -292,6 +284,17 @@ if [ $? -eq 0 ]; then
     fi
 else
     err_msg
+fi
+
+
+#### useradd shirasagi and lock passwd 
+
+useradd shirasagi >/dev/null
+if [ $? -ne 0 ]; then
+    echo "useradd shirasagi failed"
+    err_msg
+else
+    echo "useradd shirasagi and locked passwd"
 fi
 
 #### ask domain name
@@ -402,21 +405,22 @@ check_command_succeeded "${SYSTEMCTL_START_NGINX}"
 
 for i in $(seq 1 3)
 do
-  curl -sSL https://rvm.io/mpapis.asc | gpg2 --import -
-  if [ $? -eq 0 ]; then
-    break
-  fi
-  sleep 5s
+    curl -sSL https://rvm.io/mpapis.asc | gpg2 --import -
+    if [ $? -eq 0 ]; then
+        break
+    fi
+    sleep 5s
 done
 
-#### setting something, dont konw what it is 
+#### setting something, dont konw what it is (is this ruby ?)
 
 \curl -sSL https://get.rvm.io | bash -s stable
+
 RVM_HOME=/usr/local/rvm
 
 #### installing rvm
 
-export PATH="$PATH:$RVM_HOME/bin"
+export PATH=\"$PATH:$RVM_HOME/bin\"
 source $RVM_HOME/scripts/rvm
 rvm install 2.3.4
 rvm use 2.3.4 --default
@@ -424,9 +428,10 @@ gem install bundler
 
 #### cloning shirasagi and coping files to dir
 
-git clone -b stable --depth 1 https://github.com/shirasagi/${PROG_NAME}
+runuser -l shirasagi -c "git clone -b stable --depth 1 https://github.com/shirasagi/${PROG_NAME}"
 mkdir -p /var/www
-mv ${PROG_NAME} ${SS_DIR}
+mv /home/shirasagi/${PROG_NAME} ${SS_DIR}
+restorecon -Rv /var/www
 
 #### coping ruby stuff
 
@@ -434,7 +439,7 @@ cd $SS_DIR
 cp -n config/samples/*.{rb,yml} config/
 for i in $(seq 1 5)
 do
-  bundle install --without development test --path vendor/bundle
+  runuser -l shirasagi -c "${SS_DIR}/bin/bundle install --without development test --path vendor/bundle"
   if [ $? -eq 0 ]; then
     break
   fi
@@ -455,50 +460,40 @@ sed -e "s/disable: true$/disable: false/" config/defaults/recommend.yml > config
 
 echo "######## Furigana stuff ########"
 
-mkdir BUILD
-
-pushd BUILD
-
-wget -O mecab-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7cENtOXlicTFaRUE"
-wget -O mecab-ipadic-2.7.0-20070801.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7MWVlSDBCSXZMTXM"
-wget -O mecab-ruby-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7VUNlczBWVDZJbE0"
-wget https://raw.githubusercontent.com/shirasagi/shirasagi/stable/vendor/mecab/mecab-ipadic-2.7.0-20070801.patch
+runuser -l shirasagi -c 'wget -O mecab-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7cENtOXlicTFaRUE"'
+runuser -l shirasagi -c 'wget -O mecab-ipadic-2.7.0-20070801.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7MWVlSDBCSXZMTXM"'
+runuser -l shirasagi -c 'wget -O mecab-ruby-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7VUNlczBWVDZJbE0"'
+runuser -l shirasagi -c 'wget https://raw.githubusercontent.com/shirasagi/shirasagi/stable/vendor/mecab/mecab-ipadic-2.7.0-20070801.patch'
 
 echo "######## mecab ########"
 
-tar xvzf mecab-0.996.tar.gz
-
-pushd mecab-0.996
-
-./configure --enable-utf8-only
-make
-make install
-
+runuser -l shirasagi -c "tar xvzf mecab-0.996.tar.gz"
+runuser -l shirasagi -c "cd mecab-0.996;./configure --enable-utf8-only"
+runuser -l shirasagi -c "cd mecab-0.996;make"
+pushd /home/shirasagi/mecab-0.996
+    pwd
+    make install
 popd
 
 echo "######## mecab-ipadic-2.7.0-20070801 ########"
 
-tar xvzf mecab-ipadic-2.7.0-20070801.tar.gz
-
-pushd mecab-ipadic-2.7.0-20070801
-
-patch -p1 < ../mecab-ipadic-2.7.0-20070801.patch
-./configure --with-charset=UTF-8
-make
-make install
-
+runuser -l shirasagi -c "tar xvzf mecab-ipadic-2.7.0-20070801.tar.gz"
+runuser -l shirasagi -c "cd mecab-ipadic-2.7.0-20070801;patch -p1 < ../mecab-ipadic-2.7.0-20070801.patch;./configure --with-charset=UTF-8;make"
+pushd /home/shirasagi/mecab-ipadic-2.7.0-20070801
+    pwd
+    make install
 popd
 
 echo "######## mecab-ruby ########"
 
-tar xvzf mecab-ruby-0.996.tar.gz
-pushd mecab-ruby-0.996
-ruby extconf.rb
-make
-make install
-
+runuser -l shirasagi -c "tar xvzf mecab-ruby-0.996.tar.gz"
+runuser -l shirasagi -c "cd mecab-ruby-0.996;ruby extconf.rb;make"
+pushd /home/shirasagi/mecab-ruby-0.996
+    pwd
+    make install
 popd
 
+#####################################################
 echo "######## ldconfig ########"
 
 cat >> /etc/ld.so.conf << "EOF"
@@ -511,60 +506,48 @@ ldconfig
 
 echo "######## Voice stuff ########"
 
-popd
-pushd BUILD
-
-wget http://downloads.sourceforge.net/hts-engine/hts_engine_API-1.08.tar.gz \
+runuser -l shirasagi -c "wget http://downloads.sourceforge.net/hts-engine/hts_engine_API-1.08.tar.gz \
   http://downloads.sourceforge.net/open-jtalk/open_jtalk-1.07.tar.gz \
   http://downloads.sourceforge.net/lame/lame-3.99.5.tar.gz \
-  http://downloads.sourceforge.net/sox/sox-14.4.1.tar.gz
+  http://downloads.sourceforge.net/sox/sox-14.4.1.tar.gz"
 
 echo "######## hts_engine_API-1.08 ########"
 
-tar xvzf hts_engine_API-1.08.tar.gz
-pushd hts_engine_API-1.08
-./configure
-make
-make install
-
+runuser -l shirasagi -c "tar xvzf hts_engine_API-1.08.tar.gz"
+runuser -l shirasagi -c "cd hts_engine_API-1.08;./configure;make"
+pushd /home/shirasagi/hts_engine_API-1.08
+    make install
 popd
 
 echo "######## open_jtalk-1.07 ########"
 
-tar xvzf open_jtalk-1.07.tar.gz
-pushd open_jtalk-1.07
-sed -i "s/#define MAXBUFLEN 1024/#define MAXBUFLEN 10240/" bin/open_jtalk.c
-sed -i "s/0x00D0 SPACE/0x000D SPACE/" mecab-naist-jdic/char.def
-./configure --with-charset=UTF-8
-make
-make install
-
+runuser -l shirasagi -c "tar xvzf open_jtalk-1.07.tar.gz"
+runuser -l shirasagi -c "sed -i \"s/#define MAXBUFLEN 1024/#define MAXBUFLEN 10240/\" open_jtalk-1.07/bin/open_jtalk.c"
+runuser -l shirasagi -c "sed -i \"s/0x00D0 SPACE/0x000D SPACE/\" open_jtalk-1.07/mecab-naist-jdic/char.def"
+runuser -l shirasagi -c "cd open_jtalk-1.07;./configure;make"
+pushd /home/shirasagi/open_jtalk-1.07
+    make install
 popd
 
 echo "######## lame-3.99.5 ########"
 
-tar xvzf lame-3.99.5.tar.gz
-pushd lame-3.99.5
-./configure
-make
-make install
-
+runuser -l shirasagi -c "tar xvzf lame-3.99.5.tar.gz"
+runuser -l shirasagi -c "cd lame-3.99.5;./configure;make"
+pushd /home/shirasagi/lame-3.99.5
+    make install
 popd
 
 echo "######## sox-14.4.1 ########"
-tar xvzf sox-14.4.1.tar.gz
-pushd sox-14.4.1
-./configure
-make
-make install
 
+runuser -l shirasagi -c "tar xvzf sox-14.4.1.tar.gz"
+runuser -l shirasagi -c "cd sox-14.4.1;./configure;make"
+pushd /home/shirasagi/sox-14.4.1
+    make install
 popd
 
 echo "######## ldconfig ########"
 
 ldconfig
-
-popd
 
 #### setting nginx
 
@@ -634,70 +617,70 @@ location = /apple-touch-icon.png             { expires 1h; access_log off; log_n
 location = /apple-touch-icon-precomposed.png { expires 1h; access_log off; log_not_found off; }
 EOF
 
-cat > /etc/nginx/conf.d/virtual.conf << "EOF"
+cat > /etc/nginx/conf.d/virtual.conf <<EOF
 server {
     include conf.d/server/shirasagi.conf;
-    server_name example.jp;
-    root /var/www/shirasagi/public/sites/w/w/w/_/;
+    server_name ${SS_HOSTNAME};
+    root ${SS_DIR}/public/sites/w/w/w/_/;
 }
 server {
     listen  8001;
     include conf.d/server/shirasagi.conf;
-    server_name example.jp:8001;
-    root /var/www/shirasagi/public/sites/c/o/m/p/a/n/y/_/;
+    server_name ${SS_HOSTNAME}:8001;
+    root ${SS_DIR}/public/sites/c/o/m/p/a/n/y/_/;
 }
 server {
     listen  8002;
     include conf.d/server/shirasagi.conf;
-    server_name example.jp:8002;
-    root /var/www/shirasagi/public/sites/c/h/i/l/d/c/a/r/e/_/;
+    server_name ${SS_HOSTNAME}:8002;
+    root ${SS_DIR}/public/sites/c/h/i/l/d/c/a/r/e/_/;
 }
 server {
     listen  8003;
     include conf.d/server/shirasagi.conf;
-    server_name example.jp:8003;
-    root /var/www/shirasagi/public/sites/o/p/e/n/d/a/t/a/_/;
+    server_name ${SS_HOSTNAME}:8003;
+    root ${SS_DIR}/public/sites/o/p/e/n/d/a/t/a/_/;
 }
 EOF
 
-cat > /etc/nginx/conf.d/server/shirasagi.conf << "EOF"
+cat > /etc/nginx/conf.d/server/shirasagi.conf <<EOF
 include conf.d/common/drop.conf;
 
 location @app {
     include conf.d/header.conf;
-    if ($request_filename ~ .*.(ico|gif|jpe?g|png|css|js)$) { access_log off; }
+    if (\$request_filename ~ .*.(ico|gif|jpe?g|png|css|js)$) { access_log off; }
     proxy_pass http://127.0.0.1:3000;
-    proxy_set_header X-Accel-Mapping /var/www/shirasagi/=/private_files/;
+    proxy_set_header X-Accel-Mapping ${SS_DIR}/=/private_files/;
 }
 location / {
-    try_files $uri $uri/index.html @app;
+    try_files \$uri \$uri/index.html @app;
 }
 location /assets/ {
-    root /var/www/shirasagi/public/;
+    root ${SS_DIR}/public/;
     expires 1h;
     access_log off;
 }
 location /private_files/ {
     internal;
-    alias /var/www/shirasagi/;
+    alias ${SS_DIR}/;
 }
 EOF
 
 #### daemonize
 
-cat > /etc/systemd/system/shirasagi-unicorn.service << "EOF"
+cat > /etc/systemd/system/shirasagi-unicorn.service <<EOF
 [Unit]
 Description=Shirasagi Unicorn Server
 After=mongod.service
 
 [Service]
 User=root
-WorkingDirectory=/var/www/shirasagi
+WorkingDirectory=${SS_DIR}
 ExecStart=/usr/local/rvm/wrappers/default/bundle exec rake unicorn:start
 ExecStop=/usr/local/rvm/wrappers/default/bundle exec rake unicorn:stop
 ExecReload=/usr/local/rvm/wrappers/default/bundle exec rake unicorn:restart
 Type=forking
-PIDFile=/var/www/shirasagi/tmp/pids/unicorn.pid
+PIDFile=${SS_DIR}/tmp/pids/unicorn.pid
 
 [Install]
 WantedBy=multi-user.target
@@ -714,19 +697,18 @@ check_command_succeeded "${SYSTEMCTL_ENABLE_SHIRASAGI_UNICORN}"
 
 check_command_succeeded "${SYSTEMCTL_DAEMON_RELOAD}"
 
-cd $SS_DIR
-bundle exec rake db:drop
-bundle exec rake db:create_indexes
-bundle exec rake ss:create_site data="{ name: \"自治体サンプル\", host: \"www\", domains: \"${SS_HOSTNAME}\" }"
-bundle exec rake ss:create_site data="{ name: \"企業サンプル\", host: \"company\", domains: \"${SS_HOSTNAME}:${PORT_COMPA}\" }"
-bundle exec rake ss:create_site data="{ name: \"子育て支援サンプル\", host: \"childcare\", domains: \"${SS_HOSTNAME}:${PORT_CHILD}\" }"
-bundle exec rake ss:create_site data="{ name: \"オープンデータサンプル\", host: \"opendata\", domains: \"${SS_HOSTNAME}:${PORT_OPEND}\" }"
-bundle exec rake db:seed name=demo site=www
-bundle exec rake db:seed name=company site=company
-bundle exec rake db:seed name=childcare site=childcare
-bundle exec rake db:seed name=opendata site=opendata
-bundle exec rake db:seed name=gws
-bundle exec rake db:seed name=webmail
+runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:drop"
+runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:create_indexes"
+runuser -l shirasagi -c 'cd /var/www/shirasagi;./bin/bundle exec ./bin/rake ss:create_site data="{ name: \"自治体サンプル\", host: \"www\", domains: \"${SS_HOSTNAME}\" }"'
+runuser -l shirasagi -c 'cd /var/www/shirasagi;./bin/bundle exec ./bin/rake ss:create_site data="{ name: \"企業サンプル\", host: \"company\", domains: \"${SS_HOSTNAME}:${PORT_COMPA}\" }"'
+runuser -l shirasagi -c 'cd /var/www/shirasagi;./bin/bundle exec ./bin/rake ss:create_site data="{ name: \"子育て支援サンプル\", host: \"childcare\", domains: \"${SS_HOSTNAME}:${PORT_CHILD}\" }"'
+runuser -l shirasagi -c 'cd /var/www/shirasagi;./bin/bundle exec ./bin/rake ss:create_site data="{ name: \"オープンデータサンプル\", host: \"opendata\", domains: \"${SS_HOSTNAME}:${PORT_OPEND}\" }"'
+runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=demo site=www"
+runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=company site=company"
+runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=childcare site=childcare"
+runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=opendata site=opendata"
+runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=gws"
+runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=webmail"
 
 #### start shirasagi-unicorn
 
@@ -735,8 +717,8 @@ check_command_succeeded "${SYSTEMCTL_START_SHIRASAGI_UNICORN}"
 # use openlayers as default map
 echo 'db.ss_sites.update({}, { $set: { map_api: "openlayers" } }, { multi: true });' | mongo ss > /dev/null
 
-bundle exec rake cms:generate_nodes
-bundle exec rake cms:generate_pages
+runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake cms:generate_nodes"
+runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake cms:generate_pages"
 
 cat >> crontab << "EOF"
 */15 * * * * /bin/bash -l -c 'cd /var/www/shirasagi && /usr/local/rvm/wrappers/default/bundle exec rake cms:release_pages && /usr/local/rvm/wrappers/default/bundle exec rake cms:generate_nodes' >/dev/null
@@ -778,7 +760,11 @@ firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent
 echo "${FIREWALL_CMD_RELOAD}"
 firewall-cmd --reload
 
-check_command_succeeded "${RM_RF_BUILD}"
+####  relabel the directory
+
+restorecon -Rv /var/www
 
 #### echo installer finished
-echo_installer_finished
+echo_installer_has_finished
+
+popd
