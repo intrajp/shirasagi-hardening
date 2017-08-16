@@ -301,7 +301,8 @@ if [ $? -ne 0 ]; then
     echo "useradd shirasagi failed"
     err_msg
 else
-    echo "added shirasagi user and locked passwd"
+    echo "Added shirasagi user and locked password"
+    echo ""
 fi
 
 #### ask domain name
