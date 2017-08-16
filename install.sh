@@ -245,7 +245,10 @@ FIREWALL_CMD_ADD_PORT_PORT_COMPA="firewall-cmd --add-port=${PORT_COMPA}/tcp --pe
 FIREWALL_CMD_ADD_PORT_PORT_CHILD="firewall-cmd --add-port=${PORT_CHILD}/tcp --permanent"
 FIREWALL_CMD_ADD_PORT_PORT_OPEND="firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent"
 FIREWALL_CMD_RELOAD="firewall-cmd --reload"
+
 ##################### end functions ###################
+
+##################### main part ###################
 
 #### Dive into the directory which is only convenient  
 
@@ -779,3 +782,5 @@ restorecon -Rv /var/www
 echo_installer_has_finished
 
 popd
+
+##################### end main part ###################
