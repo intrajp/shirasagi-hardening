@@ -69,7 +69,7 @@ PACKAGES=("policycoreutils-python" "mongodb-org" "nginx" "gcc" "gcc-c++" "glibc-
 
 ##################### functions ###################
 
-# creates log file in /root and logs what the script do 
+# creates log file in script directory and logs what the script does 
 
 mklog()
 {
@@ -151,7 +151,6 @@ check_SELinux_is_enabled()
 check_rpms()
 {
     local num=1
-    RPMS_TO_BE_INSTALLED=()
     while [ $num -le $# ]; do
         local rpm_lacked=""
         local rpm_name=""
@@ -229,6 +228,8 @@ ask_domain_name()
         SS_HOSTNAME=${ans}
     fi
 }
+
+# set commands for using command check function will use them easily
 
 SYSTEMCTL_START_MONGOD="systemctl start mongod.service"
 SYSTEMCTL_ENABLE_MONGOD="systemctl enable mongod.service"
@@ -442,12 +443,14 @@ mv /home/shirasagi/${PROG_NAME} ${SS_DIR}
 
 echo ""
 echo "#### Now, restoring context under /var/www, because when certain directory had been moved, SELinux label would not be 'should be state'."
+echo ""
 sleep 10
 
 restorecon -Rv /var/www
 
 echo ""
-echo "#### Check this procedure after all the sequence is done, this script is for SELinux, you know..."
+echo "#### Check above relabeling results after all the sequence is done"
+echo ""
 sleep 10
 
 #### coping ruby stuff
@@ -782,6 +785,7 @@ firewall-cmd --reload
 restorecon -Rv /var/www
 
 #### echo installer finished
+
 echo_installer_has_finished
 
 popd
