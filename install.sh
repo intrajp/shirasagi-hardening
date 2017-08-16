@@ -435,7 +435,14 @@ gem install bundler
 runuser -l shirasagi -c "git clone -b stable --depth 1 https://github.com/shirasagi/${PROG_NAME}"
 mkdir -p /var/www
 mv /home/shirasagi/${PROG_NAME} ${SS_DIR}
+
+echo "Now restoring context under /var/www, because when certain directory had been moved, SELinux label would not be 'should be state'."
+sleep 10
+
 restorecon -Rv /var/www
+
+echo "Check this procedure after all the sequence is done, this script is for SELinux, you know..."
+sleep 10
 
 #### coping ruby stuff
 
@@ -497,7 +504,6 @@ pushd /home/shirasagi/mecab-ruby-0.996
     make install
 popd
 
-#####################################################
 echo "######## ldconfig ########"
 
 cat >> /etc/ld.so.conf << "EOF"
@@ -747,6 +753,7 @@ cd /etc/ImageMagick && cat << EOF | patch
 EOF
 
 #### restarting services
+
 check_command_succeeded "${SYSTEMCTL_RESTART_NGINX}"
 check_command_succeeded "${SYSTEMCTL_RESTART_MONGOD}"
 check_command_succeeded "${SYSTEMCTL_RESTART_SHIRASAGI_UNICORN}"
@@ -764,7 +771,7 @@ firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent
 echo "${FIREWALL_CMD_RELOAD}"
 firewall-cmd --reload
 
-####  relabel the directory
+####  relabel the directory (at this moment, hopefully any relabeling should not be occured)
 
 restorecon -Rv /var/www
 
