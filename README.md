@@ -59,7 +59,7 @@ $ cat install.sh
 
      "Oops! Something went wrong!"
 
-  Anyways, check install-log file in the current directory "install-log_YYmmddHHMMSS" for detail.
+  Anyways, check install-log file "shirasagi_install-log_YYmmddHHMMSS.log" in /tmp for detail.
 ```
 
 ## Check the site 
