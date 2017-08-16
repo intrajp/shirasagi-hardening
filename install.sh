@@ -439,11 +439,11 @@ cd $SS_DIR
 cp -n config/samples/*.{rb,yml} config/
 for i in $(seq 1 5)
 do
-  runuser -l shirasagi -c "${SS_DIR}/bin/bundle install --without development test --path vendor/bundle"
-  if [ $? -eq 0 ]; then
-    break
-  fi
-  sleep 5s
+    runuser -l shirasagi -c "${SS_DIR}/bin/bundle install --without development test --path vendor/bundle"
+    if [ $? -eq 0 ]; then
+        break
+    fi
+    sleep 5s
 done
 
 echo "######## Installing bundle finished ########"
@@ -507,9 +507,9 @@ ldconfig
 echo "######## Voice stuff ########"
 
 runuser -l shirasagi -c "wget http://downloads.sourceforge.net/hts-engine/hts_engine_API-1.08.tar.gz \
-  http://downloads.sourceforge.net/open-jtalk/open_jtalk-1.07.tar.gz \
-  http://downloads.sourceforge.net/lame/lame-3.99.5.tar.gz \
-  http://downloads.sourceforge.net/sox/sox-14.4.1.tar.gz"
+    http://downloads.sourceforge.net/open-jtalk/open_jtalk-1.07.tar.gz \
+    http://downloads.sourceforge.net/lame/lame-3.99.5.tar.gz \
+    http://downloads.sourceforge.net/sox/sox-14.4.1.tar.gz"
 
 echo "######## hts_engine_API-1.08 ########"
 
