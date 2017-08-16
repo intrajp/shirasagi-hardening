@@ -23,7 +23,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-#### including global variables and functions
+#### including global variables and functions (in case this script split into pieces)
 
 #. .config 
 #. functions
