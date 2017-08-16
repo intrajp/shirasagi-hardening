@@ -101,7 +101,7 @@ echo_installer_has_finished()
 {
     echo "########"
     echo "${PROG_NAME} installer has finished"
-    echo "check install log file ${LOGFILE} in ${SCRIPT_DIR}for detail"
+    echo "check install log file ${LOGFILE} in ${SCRIPT_DIR} for detail"
     echo "########"
 }
 
