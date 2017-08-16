@@ -60,7 +60,7 @@ SCRIPT_DIR="/tmp"
 NOW=`date +%Y%m%d%H%M%S`
 LOGFILE="${PROG_NAME}_install-log_${NOW}.log"
 
-#### check rpms which is not instlled on the box
+#### list of packages which should be present on the box
 
 RPMS_TO_BE_INSTALLED=()
 PACKAGES=("policycoreutils-python" "mongodb-org" "nginx" "gcc" "gcc-c++" "glibc-headers" "openssl-devel" "readline" "libyaml-devel" "readline-devel" "zlib" "zlib-devel" "wget" "git" "ImageMagick" "ImageMagick-devel" "firefox")
