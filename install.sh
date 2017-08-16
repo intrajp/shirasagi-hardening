@@ -346,7 +346,7 @@ gpgcheck=0
 enabled=1
 EOF
 
-#### installing packages which is not installed on the box
+#### installing packages which should be present on the box
 
 yum -y install $(check_rpms "${PACKAGES[@]}")
 	
@@ -440,12 +440,14 @@ runuser -l shirasagi -c "git clone -b stable --depth 1 https://github.com/shiras
 mkdir -p /var/www
 mv /home/shirasagi/${PROG_NAME} ${SS_DIR}
 
-echo "Now restoring context under /var/www, because when certain directory had been moved, SELinux label would not be 'should be state'."
+echo ""
+echo "#### Now, restoring context under /var/www, because when certain directory had been moved, SELinux label would not be 'should be state'."
 sleep 10
 
 restorecon -Rv /var/www
 
-echo "Check this procedure after all the sequence is done, this script is for SELinux, you know..."
+echo ""
+echo "#### Check this procedure after all the sequence is done, this script is for SELinux, you know..."
 sleep 10
 
 #### coping ruby stuff
