@@ -247,15 +247,20 @@ FIREWALL_CMD_ADD_PORT_PORT_OPEND="firewall-cmd --add-port=${PORT_OPEND}/tcp --pe
 FIREWALL_CMD_RELOAD="firewall-cmd --reload"
 ##################### end functions ###################
 
-#### make log file and logs in root directory
+#### Dive into the directory which is only convenient  
+
 pushd "${SCRIPT_DIR}"
+
+#### make log file and logs in root directory
 
 mklog
 
 #### echo installer 
+
 echo_installer
 
 #### check OS version and if not ok, exit
+
 check_OS_version
 
 #### check if SELinux is Enforcing, else exit 
@@ -286,7 +291,6 @@ else
     err_msg
 fi
 
-
 #### useradd shirasagi and lock passwd 
 
 useradd shirasagi >/dev/null
@@ -294,7 +298,7 @@ if [ $? -ne 0 ]; then
     echo "useradd shirasagi failed"
     err_msg
 else
-    echo "useradd shirasagi and locked passwd"
+    echo "added shirasagi user and locked passwd"
 fi
 
 #### ask domain name
