@@ -42,7 +42,7 @@ THIS_USER=""
 SELINUX=""
 
 #SS_HOSTNAME=${1:-"example.jp"}
-SS_USER=${2:-"$USER"}
+#SS_USER=${2:-"$USER"}
 SS_DIR="/var/www/${PROG_NAME}"
 
 #### ports
@@ -295,7 +295,7 @@ else
     err_msg
 fi
 
-#### useradd shirasagi and lock passwd 
+#### Add user shirasagi and lock password 
 
 useradd shirasagi >/dev/null
 if [ $? -ne 0 ]; then
@@ -718,10 +718,10 @@ check_command_succeeded "${SYSTEMCTL_DAEMON_RELOAD}"
 
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:drop"
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:create_indexes"
-runuser -l shirasagi -c 'cd /var/www/shirasagi;./bin/bundle exec ./bin/rake ss:create_site data="{ name: \"自治体サンプル\", host: \"www\", domains: \"${SS_HOSTNAME}\" }"'
-runuser -l shirasagi -c 'cd /var/www/shirasagi;./bin/bundle exec ./bin/rake ss:create_site data="{ name: \"企業サンプル\", host: \"company\", domains: \"${SS_HOSTNAME}:${PORT_COMPA}\" }"'
-runuser -l shirasagi -c 'cd /var/www/shirasagi;./bin/bundle exec ./bin/rake ss:create_site data="{ name: \"子育て支援サンプル\", host: \"childcare\", domains: \"${SS_HOSTNAME}:${PORT_CHILD}\" }"'
-runuser -l shirasagi -c 'cd /var/www/shirasagi;./bin/bundle exec ./bin/rake ss:create_site data="{ name: \"オープンデータサンプル\", host: \"opendata\", domains: \"${SS_HOSTNAME}:${PORT_OPEND}\" }"'
+runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"自治体サンプル\", host: \"www\", domains: \"${SS_HOSTNAME}\" }'"
+runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"企業サンプル\", host: \"company\", domains: \"${SS_HOSTNAME}:${PORT_COMPA}\" }'"
+runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"子育て支援サンプル\", host: \"childcare\", domains: \"${SS_HOSTNAME}:${PORT_CHILD}\" }'"
+runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"オープンデータサンプル\", host: \"opendata\", domains: \"${SS_HOSTNAME}:${PORT_OPEND}\" }'"
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=demo site=www"
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=company site=company"
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=childcare site=childcare"
