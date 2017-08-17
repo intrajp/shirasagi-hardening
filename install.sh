@@ -794,6 +794,8 @@ restorecon -Rv /var/www
 
 echo_installer_has_finished
 
+#### Back from the directory which was only convenient  
+
 popd
 
 ##################### end main part ###################
