@@ -30,16 +30,21 @@
 
 ##################### .config ###################
 
-#### prog_name
+#### program name
+
 PROG_NAME="shirasagi" 
 
 #### OS 
+## TODO:read version which could be allowed to propagate this program 
+
 OS_VERSION="CentOS Linux release 7.3.1611 (Core)"
 
 #### vars
 
 THIS_USER=""
 SELINUX=""
+
+## hostname and user will be ask and set later, so...
 
 #SS_HOSTNAME=${1:-"example.jp"}
 #SS_USER=${2:-"$USER"}
@@ -268,6 +273,7 @@ echo_installer
 check_OS_version
 
 #### check if SELinux is Enforcing, else exit 
+## TODO:it might be not a bad idea allowing systems without SELinux after asking admin
 
 SELINUX=$(check_SELinux_is_enabled)
 if [ $? -eq 0 ]; then
