@@ -194,10 +194,10 @@ check_command_succeeded()
 check_command_runuser()
 {
     if [ $? -ne 0 ]; then
-        echo "#### command failed ####"
+        echo "runuser command failed"
         err_msg
     else
-        echo "#### command succeeded ####"
+        echo "runuser command succeeded"
         sleep 5
     fi
 }
