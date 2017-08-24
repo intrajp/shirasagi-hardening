@@ -249,6 +249,7 @@ SYSTEMCTL_RESTART_NGINX="systemctl restart nginx.service"
 SYSTEMCTL_RESTART_MONGOD="systemctl restart mongod.service"
 SYSTEMCTL_RESTART_SHIRASAGI_UNICORN="systemctl restart shirasagi-unicorn.service"
 FIREWALL_CMD_ADD_PORT_HTTP_TCP="firewall-cmd --add-port=http/tcp --permanent"
+FIREWALL_CMD_ADD_PORT_PORT_UNICORN="firewall-cmd --add-port=${PORT_UNICORN}/tcp --permanent"
 FIREWALL_CMD_ADD_PORT_PORT_COMPA="firewall-cmd --add-port=${PORT_COMPA}/tcp --permanent"
 FIREWALL_CMD_ADD_PORT_PORT_CHILD="firewall-cmd --add-port=${PORT_CHILD}/tcp --permanent"
 FIREWALL_CMD_ADD_PORT_PORT_OPEND="firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent"
@@ -781,6 +782,8 @@ check_command_succeeded "${SYSTEMCTL_RESTART_SHIRASAGI_UNICORN}"
 
 echo "${FIREWALL_CMD_ADD_PORT_HTTP_TCP}"
 firewall-cmd --add-port=http/tcp --permanent
+echo "${FIREWALL_CMD_ADD_PORT_PORT_UNICORN}"
+firewall-cmd --add-port=${PORT_UNICORN}/tcp --permanent
 echo "${FIREWALL_CMD_ADD_PORT_PORT_COMPA}"
 firewall-cmd --add-port=${PORT_COMPA}/tcp --permanent
 echo "${FIREWALL_CMD_ADD_PORT_PORT_CHILD}"
