@@ -56,6 +56,7 @@ PORT_UNICORN=3000
 PORT_COMPA=8001
 PORT_CHILD=8002
 PORT_OPEND=8003
+SELINUX_PORT_TYPE="http_port_t"
 
 #### script directory 
 
@@ -384,7 +385,7 @@ check_command_succeeded "${SYSTEMCTL_ENABLE_NGINX}"
 #### SELinux needs to httpd_t 
 #Allow /usr/sbin/httpd to bind to network port <PORT> 
 #Modify the port type.
-#where PORT_TYPE is one of the following: ntop_port_t, http_cache_port_t, http_port_t.
+#where PORT_TYPE is one the following: http_port_t.
 #here we go
 #set each port if aready set,modify it
 
@@ -399,17 +400,17 @@ do
     elif [ ${i} -eq 3 ]; then
         p_="${PORT_OPEND}"
 fi
-    semanage port -a -t http_port_t -p tcp "$p_" 
+    semanage port -a -t ${SELINUX_PORT_TYPE} -p tcp "$p_" 
     if [ $? -ne 0 ]; then
-        semanage port -m -t http_port_t -p tcp "$p_" 
+        semanage port -m -t ${SELINUX_PORT_TYPE} -p tcp "$p_" 
         if [ $? -ne 0 ]; then
-            echo "'semanage -m -t http_port_t -p tcp $p_' failed"
+            echo "'semanage -m -t ${SELINUX_PORT_TYPE} -p tcp $p_' failed"
             err_msg
         else
-            echo "'semanage -m -t http_port_t -p tcp $p_' succeeded"
+            echo "'semanage -m -t ${SELINUX_PORT_TYPE} -p tcp $p_' succeeded"
         fi
     else
-        echo "'semanage -a -t http_port_t -p tcp $p_' succeeded"
+        echo "'semanage -a -t ${SELINUX_PORT_TYPE} -p tcp $p_' succeeded"
     fi
 done
 
