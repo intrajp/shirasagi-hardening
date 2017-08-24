@@ -319,7 +319,7 @@ fi
 
 #### Add user shirasagi and lock password 
 
-useradd shirasagi >/dev/null
+id -u shirasagi >/dev/null || useradd shirasagi >/dev/null
 if [ $? -ne 0 ]; then
     echo "useradd shirasagi failed"
     err_msg
