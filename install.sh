@@ -491,9 +491,9 @@ sed -e "s/disable: true$/disable: false/" config/defaults/recommend.yml > config
 
 echo "######## Furigana stuff ########"
 
-runuser -l shirasagi -c 'wget -O mecab-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7cENtOXlicTFaRUE"'
+runuser -l shirasagi -c 'wget --no-check-certificate -O mecab-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7cENtOXlicTFaRUE"'
 runuser -l shirasagi -c 'wget -O mecab-ipadic-2.7.0-20070801.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7MWVlSDBCSXZMTXM"'
-runuser -l shirasagi -c 'wget -O mecab-ruby-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7VUNlczBWVDZJbE0"'
+runuser -l shirasagi -c 'wget --no-check-certificate -O mecab-ruby-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7VUNlczBWVDZJbE0"'
 runuser -l shirasagi -c 'wget https://raw.githubusercontent.com/shirasagi/shirasagi/stable/vendor/mecab/mecab-ipadic-2.7.0-20070801.patch'
 
 echo "######## mecab ########"
