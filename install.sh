@@ -189,6 +189,19 @@ check_command_succeeded()
     fi
 }
 
+# check function succeeded (for runuser)
+
+check_command_runuser()
+{
+    if [ $? -ne 0 ]; then
+        echo "#### command failed ####"
+        err_msg
+    else
+        echo "#### command succeeded ####"
+        sleep 5
+    fi
+}
+
 # check function succeeded (pattern 2, not used)
 
 try_command_multiple_times()
@@ -449,6 +462,7 @@ gem install bundler
 #### cloning shirasagi and coping files to dir
 
 runuser -l shirasagi -c "git clone -b stable --depth 1 https://github.com/shirasagi/${PROG_NAME}"
+check_command_runuser
 mkdir -p /var/www
 mv /home/shirasagi/${PROG_NAME} ${SS_DIR}
 
@@ -492,15 +506,22 @@ sed -e "s/disable: true$/disable: false/" config/defaults/recommend.yml > config
 echo "######## Furigana stuff ########"
 
 runuser -l shirasagi -c 'wget --no-check-certificate -O mecab-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7cENtOXlicTFaRUE"'
+check_command_runuser
 runuser -l shirasagi -c 'wget --no-check-certificate -O mecab-ipadic-2.7.0-20070801.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7MWVlSDBCSXZMTXM"'
+check_command_runuser
 runuser -l shirasagi -c 'wget --no-check-certificate -O mecab-ruby-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7VUNlczBWVDZJbE0"'
+check_command_runuser
 runuser -l shirasagi -c 'wget https://raw.githubusercontent.com/shirasagi/shirasagi/stable/vendor/mecab/mecab-ipadic-2.7.0-20070801.patch'
+check_command_runuser
 
 echo "######## mecab ########"
 
 runuser -l shirasagi -c "tar xvzf mecab-0.996.tar.gz"
+check_command_runuser
 runuser -l shirasagi -c "cd mecab-0.996;./configure --enable-utf8-only"
+check_command_runuser
 runuser -l shirasagi -c "cd mecab-0.996;make"
+check_command_runuser
 pushd /home/shirasagi/mecab-0.996
     pwd
     make install
@@ -509,7 +530,9 @@ popd
 echo "######## mecab-ipadic-2.7.0-20070801 ########"
 
 runuser -l shirasagi -c "tar xvzf mecab-ipadic-2.7.0-20070801.tar.gz"
+check_command_runuser
 runuser -l shirasagi -c "cd mecab-ipadic-2.7.0-20070801;patch -p1 < ../mecab-ipadic-2.7.0-20070801.patch;./configure --with-charset=UTF-8;make"
+check_command_runuser
 pushd /home/shirasagi/mecab-ipadic-2.7.0-20070801
     pwd
     make install
@@ -518,7 +541,9 @@ popd
 echo "######## mecab-ruby ########"
 
 runuser -l shirasagi -c "tar xvzf mecab-ruby-0.996.tar.gz"
+check_command_runuser
 runuser -l shirasagi -c "cd mecab-ruby-0.996;ruby extconf.rb;make"
+check_command_runuser
 pushd /home/shirasagi/mecab-ruby-0.996
     pwd
     make install
@@ -540,11 +565,14 @@ runuser -l shirasagi -c "wget http://downloads.sourceforge.net/hts-engine/hts_en
     http://downloads.sourceforge.net/open-jtalk/open_jtalk-1.07.tar.gz \
     http://downloads.sourceforge.net/lame/lame-3.99.5.tar.gz \
     http://downloads.sourceforge.net/sox/sox-14.4.1.tar.gz"
+check_command_runuser
 
 echo "######## hts_engine_API-1.08 ########"
 
 runuser -l shirasagi -c "tar xvzf hts_engine_API-1.08.tar.gz"
+check_command_runuser
 runuser -l shirasagi -c "cd hts_engine_API-1.08;./configure;make"
+check_command_runuser
 pushd /home/shirasagi/hts_engine_API-1.08
     make install
 popd
@@ -552,9 +580,13 @@ popd
 echo "######## open_jtalk-1.07 ########"
 
 runuser -l shirasagi -c "tar xvzf open_jtalk-1.07.tar.gz"
+check_command_runuser
 runuser -l shirasagi -c "sed -i \"s/#define MAXBUFLEN 1024/#define MAXBUFLEN 10240/\" open_jtalk-1.07/bin/open_jtalk.c"
+check_command_runuser
 runuser -l shirasagi -c "sed -i \"s/0x00D0 SPACE/0x000D SPACE/\" open_jtalk-1.07/mecab-naist-jdic/char.def"
+check_command_runuser
 runuser -l shirasagi -c "cd open_jtalk-1.07;./configure;make"
+check_command_runuser
 pushd /home/shirasagi/open_jtalk-1.07
     make install
 popd
@@ -562,7 +594,9 @@ popd
 echo "######## lame-3.99.5 ########"
 
 runuser -l shirasagi -c "tar xvzf lame-3.99.5.tar.gz"
+check_command_runuser
 runuser -l shirasagi -c "cd lame-3.99.5;./configure;make"
+check_command_runuser
 pushd /home/shirasagi/lame-3.99.5
     make install
 popd
@@ -570,7 +604,9 @@ popd
 echo "######## sox-14.4.1 ########"
 
 runuser -l shirasagi -c "tar xvzf sox-14.4.1.tar.gz"
+check_command_runuser
 runuser -l shirasagi -c "cd sox-14.4.1;./configure;make"
+check_command_runuser
 pushd /home/shirasagi/sox-14.4.1
     make install
 popd
@@ -728,17 +764,29 @@ check_command_succeeded "${SYSTEMCTL_ENABLE_SHIRASAGI_UNICORN}"
 check_command_succeeded "${SYSTEMCTL_DAEMON_RELOAD}"
 
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:drop"
+check_command_runuser
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:create_indexes"
+check_command_runuser
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"自治体サンプル\", host: \"www\", domains: \"${SS_HOSTNAME}\" }'"
+check_command_runuser
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"企業サンプル\", host: \"company\", domains: \"${SS_HOSTNAME}:${PORT_COMPA}\" }'"
+check_command_runuser
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"子育て支援サンプル\", host: \"childcare\", domains: \"${SS_HOSTNAME}:${PORT_CHILD}\" }'"
+check_command_runuser
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"オープンデータサンプル\", host: \"opendata\", domains: \"${SS_HOSTNAME}:${PORT_OPEND}\" }'"
+check_command_runuser
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=demo site=www"
+check_command_runuser
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=company site=company"
+check_command_runuser
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=childcare site=childcare"
+check_command_runuser
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=opendata site=opendata"
+check_command_runuser
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=gws"
+check_command_runuser
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=webmail"
+check_command_runuser
 
 #### start shirasagi-unicorn
 
@@ -748,7 +796,9 @@ check_command_succeeded "${SYSTEMCTL_START_SHIRASAGI_UNICORN}"
 echo 'db.ss_sites.update({}, { $set: { map_api: "openlayers" } }, { multi: true });' | mongo ss > /dev/null
 
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake cms:generate_nodes"
+check_command_runuser
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake cms:generate_pages"
+check_command_runuser
 
 cat >> crontab << "EOF"
 */15 * * * * /bin/bash -l -c 'cd /var/www/shirasagi && /usr/local/rvm/wrappers/default/bundle exec rake cms:release_pages && /usr/local/rvm/wrappers/default/bundle exec rake cms:generate_nodes' >/dev/null
