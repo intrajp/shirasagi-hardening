@@ -52,6 +52,7 @@ SS_DIR="/var/www/${PROG_NAME}"
 
 #### ports
 
+PORT_UNICORN=3000
 PORT_COMPA=8001
 PORT_CHILD=8002
 PORT_OPEND=8003
@@ -387,9 +388,11 @@ check_command_succeeded "${SYSTEMCTL_ENABLE_NGINX}"
 #here we go
 #set each port if aready set,modify it
 
-for i in $(seq 1 3)
+for i in $(seq 0 3)
 do
-    if [ ${i} -eq 1 ]; then
+    if [ ${i} -eq 0 ]; then
+        p_="${PORT_UNICORN}"
+    elif [ ${i} -eq 1 ]; then
         p_="${PORT_COMPA}"
     elif [ ${i} -eq 2 ]; then
         p_="${PORT_CHILD}"
