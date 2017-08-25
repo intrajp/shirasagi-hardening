@@ -249,6 +249,31 @@ ask_domain_name()
     fi
 }
 
+#### SELinux needs to httpd_t 
+#Allow /usr/sbin/httpd to bind to network port <PORT> 
+#Modify the port type.
+#where PORT_TYPE is one the following: http_port_t.
+#here we go
+#set each port if aready set,modify it
+
+semanage_selinux_port()
+{
+    local port_num=$2
+    local selinux_port_type=$1
+    semanage port -a -t ${selinux_port_type} -p tcp "${port_num}" 
+    if [ $? -ne 0 ]; then
+        semanage port -m -t ${selinux_port_type} -p tcp "${port_num}" 
+        if [ $? -ne 0 ]; then
+            echo "'semanage -m -t ${selinux_port_type} -p tcp ${port_num}' failed"
+            err_msg
+        else
+            echo "'semanage -m -t ${selinux_port_type} -p tcp ${port_num}' succeeded"
+        fi
+    else
+        echo "'semanage -a -t ${selinux_port_type} -p tcp ${port_num}' succeeded"
+    fi
+}
+
 # set commands for using command check function will use them easily
 
 SYSTEMCTL_START_MONGOD="systemctl start mongod.service"
@@ -396,37 +421,14 @@ echo "######## Enable nginx ########"
 
 check_command_succeeded "${SYSTEMCTL_ENABLE_NGINX}"
 
-#### SELinux needs to httpd_t 
-#Allow /usr/sbin/httpd to bind to network port <PORT> 
-#Modify the port type.
-#where PORT_TYPE is one the following: http_port_t.
-#here we go
-#set each port if aready set,modify it
+#### SELinux port managing 
 
-for i in $(seq 0 3)
-do
-    if [ ${i} -eq 0 ]; then
-        p_="${PORT_UNICORN}"
-    elif [ ${i} -eq 1 ]; then
-        p_="${PORT_COMPA}"
-    elif [ ${i} -eq 2 ]; then
-        p_="${PORT_CHILD}"
-    elif [ ${i} -eq 3 ]; then
-        p_="${PORT_OPEND}"
-fi
-    semanage port -a -t ${SELINUX_PORT_TYPE} -p tcp "$p_" 
-    if [ $? -ne 0 ]; then
-        semanage port -m -t ${SELINUX_PORT_TYPE} -p tcp "$p_" 
-        if [ $? -ne 0 ]; then
-            echo "'semanage -m -t ${SELINUX_PORT_TYPE} -p tcp $p_' failed"
-            err_msg
-        else
-            echo "'semanage -m -t ${SELINUX_PORT_TYPE} -p tcp $p_' succeeded"
-        fi
-    else
-        echo "'semanage -a -t ${SELINUX_PORT_TYPE} -p tcp $p_' succeeded"
-    fi
-done
+echo "######## SELinux port managing ########"
+
+semanage_selinux_port "${SELINUX_PORT_TYPE}" "${PORT_UNICORN}"
+semanage_selinux_port "${SELINUX_PORT_TYPE}" "${PORT_COMPA}"
+semanage_selinux_port "${SELINUX_PORT_TYPE}" "${PORT_CHILD}"
+semanage_selinux_port "${SELINUX_PORT_TYPE}" "${PORT_OPEND}"
 
 #### start nginx
 
