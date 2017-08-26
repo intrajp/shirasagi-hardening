@@ -49,6 +49,8 @@ SELINUX=""
 #SS_HOSTNAME=${1:-"example.jp"}
 #SS_USER=${2:-"$USER"}
 SS_DIR="/var/www/${PROG_NAME}"
+# this variable would be used for deleting directory when command failed
+CLEAN_DIR="${SS_DIR}"
 
 #### ports
 
@@ -57,10 +59,6 @@ PORT_COMPA=8001
 PORT_CHILD=8002
 PORT_OPEND=8003
 SELINUX_PORT_TYPE="http_port_t"
-
-#### script directory 
-
-SCRIPT_DIR="/tmp"
 
 #### log directory 
 
@@ -78,6 +76,26 @@ PACKAGES=("policycoreutils-python" "mongodb-org" "nginx" "gcc" "gcc-c++" "glibc-
 
 NGINX_DIR_COMMON="/etc/nginx/conf.d/common"
 NGINX_DIR_SERVER="/etc/nginx/conf.d/server"
+
+# set commands for using command check function will use them easily
+
+SYSTEMCTL_START_MONGOD="systemctl start mongod.service"
+SYSTEMCTL_ENABLE_MONGOD="systemctl enable mongod.service"
+SYSTEMCTL_ENABLE_NGINX="systemctl enable nginx.service"
+SYSTEMCTL_ENABLE_SHIRASAGI_UNICORN="systemctl enable shirasagi-unicorn.service"
+SYSTEMCTL_DAEMON_RELOAD="systemctl daemon-reload"
+SYSTEMCTL_START_NGINX="systemctl start nginx.service"
+SYSTEMCTL_START_SHIRASAGI_UNICORN="systemctl start shirasagi-unicorn.service"
+SYSTEMCTL_RESTART_NGINX="systemctl restart nginx.service"
+SYSTEMCTL_RESTART_MONGOD="systemctl restart mongod.service"
+SYSTEMCTL_RESTART_SHIRASAGI_UNICORN="systemctl restart shirasagi-unicorn.service"
+FIREWALL_CMD_ADD_PORT_HTTP_TCP="firewall-cmd --add-port=http/tcp --permanent"
+FIREWALL_CMD_ADD_PORT_PORT_UNICORN="firewall-cmd --add-port=${PORT_UNICORN}/tcp --permanent"
+FIREWALL_CMD_ADD_PORT_PORT_COMPA="firewall-cmd --add-port=${PORT_COMPA}/tcp --permanent"
+FIREWALL_CMD_ADD_PORT_PORT_CHILD="firewall-cmd --add-port=${PORT_CHILD}/tcp --permanent"
+FIREWALL_CMD_ADD_PORT_PORT_OPEND="firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent"
+FIREWALL_CMD_RELOAD="firewall-cmd --reload"
+RESTORECON_VAR_WWW="restorecon -Rv /var/www"
 
 ##################### end .config ###################
 
@@ -250,14 +268,19 @@ check_mkdir()
     fi
 }
 
-# check function succeeded 
-# arg 1: command 
+# clean the directory 
+# arg 1: directory 
 
-check_command_succeeded()
+clean_dir()
 {
-    local comm
-    comm=$1
-    ## exec the command
+    local dir 
+    local comm 
+    if [ -z "$1" ]; then
+        echo "function error"
+        err_msg
+    fi
+    dir="$1"
+    comm="rm -rf ${dir}" 
     $(${comm})
     if [ $? -eq 0 ]; then
         echo "'$comm' succeeded"
@@ -267,12 +290,45 @@ check_command_succeeded()
     fi
 }
 
+# check function succeeded, if function fails and arg 2 (should be directory) is set, deleting arg 2  
+# arg 1: command 
+# arg 2 (option): directory to be deleted when command failed (also deleting user shirasagi) 
+
+check_command_succeeded()
+{
+    if [ -z "$1" ]; then
+        echo "function error"
+        err_msg
+    fi
+    local comm
+    local clean_dir
+    comm="${1}"
+    clean_dir=$2
+    ## exec the command
+    $(${comm})
+    if [ $? -eq 0 ]; then
+        echo "'$comm' succeeded"
+    else
+        echo "'$comm' failed"
+        if [ ! -z "$2" ]; then
+            clean_dir "${CLEAN_DIR}"
+            rm -rf /home/shirasagi/${NOW} 
+        fi
+        err_msg
+    fi
+}
+
 # check function succeeded (for runuser)
+# arg 1 (option): directory to be deleted when command failed (also deleting user shirasagi) 
 
 check_command_runuser()
 {
     if [ $? -ne 0 ]; then
         echo "runuser command failed"
+        if [ ! -z "$1" ]; then
+            clean_dir "${CLEAN_DIR}"
+            rm -rf /home/shirasagi/${NOW} 
+        fi
         err_msg
     else
         echo "runuser command succeeded"
@@ -285,6 +341,10 @@ check_command_runuser()
 
 try_command_multiple_times()
 {
+    if [ -z "$1" ]; then
+        echo "function error"
+        err_msg
+    fi
     local comm
     comm=$1
     ## exec the command
@@ -294,21 +354,6 @@ try_command_multiple_times()
     else
         echo "'$comm' failed"
         check_command_succeeded $comm
-    fi
-}
-
-# clean the BUILD directory (not used) 
-# arg 1: directory 
-
-clean_build_dir()
-{
-    local comm
-    comm=$1
-    if [ $? -eq 0 ]; then
-        echo "'$comm' succeeded"
-    else
-        echo "'$comm' failed"
-        err_msg
     fi
 }
 
@@ -329,13 +374,20 @@ ask_domain_name()
     fi
 }
 
-#SELinux should be allowed /usr/sbin/httpd to bind to network port <PORT> 
-#set each port and if aready set, modify it
+# SELinux should be allowed /usr/sbin/httpd to bind to network port <PORT> 
+# set each port and if aready set, modify it
 # arg 1: SELinux port type 
 # arg 2: port number 
 
 semanage_selinux_port()
 {
+    if [ -z "$1" ]; then
+        echo "function error"
+        err_msg
+    elif [ -z "$2" ]; then
+        echo "function error"
+        err_msg
+    fi
     local selinux_port_type=$1
     local port_num=$2
     semanage port -a -t ${selinux_port_type} -p tcp "${port_num}" 
@@ -352,32 +404,20 @@ semanage_selinux_port()
     fi
 }
 
-# set commands for using command check function will use them easily
-
-SYSTEMCTL_START_MONGOD="systemctl start mongod.service"
-SYSTEMCTL_ENABLE_MONGOD="systemctl enable mongod.service"
-SYSTEMCTL_ENABLE_NGINX="systemctl enable nginx.service"
-SYSTEMCTL_ENABLE_SHIRASAGI_UNICORN="systemctl enable shirasagi-unicorn.service"
-SYSTEMCTL_DAEMON_RELOAD="systemctl daemon-reload"
-SYSTEMCTL_START_NGINX="systemctl start nginx.service"
-SYSTEMCTL_START_SHIRASAGI_UNICORN="systemctl start shirasagi-unicorn.service"
-SYSTEMCTL_RESTART_NGINX="systemctl restart nginx.service"
-SYSTEMCTL_RESTART_MONGOD="systemctl restart mongod.service"
-SYSTEMCTL_RESTART_SHIRASAGI_UNICORN="systemctl restart shirasagi-unicorn.service"
-FIREWALL_CMD_ADD_PORT_HTTP_TCP="firewall-cmd --add-port=http/tcp --permanent"
-FIREWALL_CMD_ADD_PORT_PORT_UNICORN="firewall-cmd --add-port=${PORT_UNICORN}/tcp --permanent"
-FIREWALL_CMD_ADD_PORT_PORT_COMPA="firewall-cmd --add-port=${PORT_COMPA}/tcp --permanent"
-FIREWALL_CMD_ADD_PORT_PORT_CHILD="firewall-cmd --add-port=${PORT_CHILD}/tcp --permanent"
-FIREWALL_CMD_ADD_PORT_PORT_OPEND="firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent"
-FIREWALL_CMD_RELOAD="firewall-cmd --reload"
+# clean git cloned directory
+clean_git_cloned_dir()
+{
+    rm -rf /home/shirasagi/${NOW}
+    if [ $? -eq 0 ];then
+        echo "Cleaned git cloned directory"
+    else
+        echo "Failed cleaning git cloned directory"
+    fi
+}
 
 ##################### end functions ###################
 
 ##################### main part ###################
-
-#### Dive into the directory which is only convenient  
-
-pushd "${SCRIPT_DIR}"
 
 #### make log file and logs in root directory
 
@@ -551,16 +591,18 @@ gem install bundler
 
 #### cloning shirasagi and coping files to dir
 
-runuser -l shirasagi -c "git clone -b stable --depth 1 https://github.com/shirasagi/${PROG_NAME}"
+runuser -l shirasagi -c "cd ~;mkdir ${NOW};cd ${NOW};git clone -b stable --depth 1 https://github.com/shirasagi/shirasagi"
 check_command_runuser
 mkdir -p /var/www
-mv /home/shirasagi/${PROG_NAME} ${SS_DIR}
+mv /home/shirasagi/${NOW}/shirasagi ${SS_DIR}
 
 echo ""
 echo "#### Now, restoring context under /var/www, because when certain directory had been moved, SELinux label would not be 'should be state'."
 echo ""
 sleep 10
 
+## this does not work, why not?
+#check_command_succeeded "${RESTORECON_VAR_WWW}" "${SS_DIR}"
 restorecon -Rv /var/www
 
 echo ""
@@ -596,22 +638,22 @@ sed -e "s/disable: true$/disable: false/" config/defaults/recommend.yml > config
 echo "######## Furigana stuff ########"
 
 runuser -l shirasagi -c 'wget --no-check-certificate -O mecab-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7cENtOXlicTFaRUE"'
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c 'wget --no-check-certificate -O mecab-ipadic-2.7.0-20070801.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7MWVlSDBCSXZMTXM"'
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c 'wget --no-check-certificate -O mecab-ruby-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7VUNlczBWVDZJbE0"'
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c 'wget https://raw.githubusercontent.com/shirasagi/shirasagi/stable/vendor/mecab/mecab-ipadic-2.7.0-20070801.patch'
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 
 echo "######## mecab ########"
 
 runuser -l shirasagi -c "tar xvzf mecab-0.996.tar.gz"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd mecab-0.996;./configure --enable-utf8-only"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd mecab-0.996;make"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 pushd /home/shirasagi/mecab-0.996
     pwd
     make install
@@ -620,9 +662,9 @@ popd
 echo "######## mecab-ipadic-2.7.0-20070801 ########"
 
 runuser -l shirasagi -c "tar xvzf mecab-ipadic-2.7.0-20070801.tar.gz"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd mecab-ipadic-2.7.0-20070801;patch -p1 < ../mecab-ipadic-2.7.0-20070801.patch;./configure --with-charset=UTF-8;make"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 pushd /home/shirasagi/mecab-ipadic-2.7.0-20070801
     pwd
     make install
@@ -631,9 +673,9 @@ popd
 echo "######## mecab-ruby ########"
 
 runuser -l shirasagi -c "tar xvzf mecab-ruby-0.996.tar.gz"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd mecab-ruby-0.996;ruby extconf.rb;make"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 pushd /home/shirasagi/mecab-ruby-0.996
     pwd
     make install
@@ -655,14 +697,14 @@ runuser -l shirasagi -c "wget http://downloads.sourceforge.net/hts-engine/hts_en
     http://downloads.sourceforge.net/open-jtalk/open_jtalk-1.07.tar.gz \
     http://downloads.sourceforge.net/lame/lame-3.99.5.tar.gz \
     http://downloads.sourceforge.net/sox/sox-14.4.1.tar.gz"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 
 echo "######## hts_engine_API-1.08 ########"
 
 runuser -l shirasagi -c "tar xvzf hts_engine_API-1.08.tar.gz"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd hts_engine_API-1.08;./configure;make"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 pushd /home/shirasagi/hts_engine_API-1.08
     make install
 popd
@@ -670,13 +712,13 @@ popd
 echo "######## open_jtalk-1.07 ########"
 
 runuser -l shirasagi -c "tar xvzf open_jtalk-1.07.tar.gz"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "sed -i \"s/#define MAXBUFLEN 1024/#define MAXBUFLEN 10240/\" open_jtalk-1.07/bin/open_jtalk.c"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "sed -i \"s/0x00D0 SPACE/0x000D SPACE/\" open_jtalk-1.07/mecab-naist-jdic/char.def"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd open_jtalk-1.07;./configure;make"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 pushd /home/shirasagi/open_jtalk-1.07
     make install
 popd
@@ -684,9 +726,9 @@ popd
 echo "######## lame-3.99.5 ########"
 
 runuser -l shirasagi -c "tar xvzf lame-3.99.5.tar.gz"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd lame-3.99.5;./configure;make"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 pushd /home/shirasagi/lame-3.99.5
     make install
 popd
@@ -694,9 +736,9 @@ popd
 echo "######## sox-14.4.1 ########"
 
 runuser -l shirasagi -c "tar xvzf sox-14.4.1.tar.gz"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd sox-14.4.1;./configure;make"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 pushd /home/shirasagi/sox-14.4.1
     make install
 popd
@@ -848,48 +890,48 @@ chmod 644 /etc/systemd/system/shirasagi-unicorn.service
 
 #### enable shirasagi-unicorn 
 
-check_command_succeeded "${SYSTEMCTL_ENABLE_SHIRASAGI_UNICORN}"
+check_command_succeeded "${SYSTEMCTL_ENABLE_SHIRASAGI_UNICORN}" "${SS_DIR}"
 
 #### taking changed configurations from filesystem and regenerationg dependency trees 
 
-check_command_succeeded "${SYSTEMCTL_DAEMON_RELOAD}"
+check_command_succeeded "${SYSTEMCTL_DAEMON_RELOAD}" "${SS_DIR}"
 
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:drop"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:create_indexes"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"自治体サンプル\", host: \"www\", domains: \"${SS_HOSTNAME}\" }'"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"企業サンプル\", host: \"company\", domains: \"${SS_HOSTNAME}:${PORT_COMPA}\" }'"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"子育て支援サンプル\", host: \"childcare\", domains: \"${SS_HOSTNAME}:${PORT_CHILD}\" }'"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"オープンデータサンプル\", host: \"opendata\", domains: \"${SS_HOSTNAME}:${PORT_OPEND}\" }'"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=demo site=www"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=company site=company"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=childcare site=childcare"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=opendata site=opendata"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=gws"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=webmail"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 
 #### start shirasagi-unicorn
 
-check_command_succeeded "${SYSTEMCTL_START_SHIRASAGI_UNICORN}"
+check_command_succeeded "${SYSTEMCTL_START_SHIRASAGI_UNICORN}" "${SS_DIR}"
 
 # use openlayers as default map
 echo 'db.ss_sites.update({}, { $set: { map_api: "openlayers" } }, { multi: true });' | mongo ss > /dev/null
 
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake cms:generate_nodes"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake cms:generate_pages"
-check_command_runuser
+check_command_runuser "${SS_DIR}"
 
 cat >> crontab << "EOF"
 */15 * * * * /bin/bash -l -c 'cd /var/www/shirasagi && /usr/local/rvm/wrappers/default/bundle exec rake cms:release_pages && /usr/local/rvm/wrappers/default/bundle exec rake cms:generate_nodes' >/dev/null
@@ -915,9 +957,9 @@ EOF
 
 #### restarting services
 
-check_command_succeeded "${SYSTEMCTL_RESTART_NGINX}"
-check_command_succeeded "${SYSTEMCTL_RESTART_MONGOD}"
-check_command_succeeded "${SYSTEMCTL_RESTART_SHIRASAGI_UNICORN}"
+check_command_succeeded "${SYSTEMCTL_RESTART_NGINX}" "${SS_DIR}"
+check_command_succeeded "${SYSTEMCTL_RESTART_MONGOD}" "${SS_DIR}"
+check_command_succeeded "${SYSTEMCTL_RESTART_SHIRASAGI_UNICORN}" "${SS_DIR}"
 
 #### firewalld stuff
 
@@ -938,13 +980,13 @@ firewall-cmd --reload
 
 restorecon -Rv /var/www
 
+#### cleaning cloned directory 
+
+clean_git_cloned_dir
+
 #### echo installer finished
 
 echo_installer_has_finished
-
-#### Back from the directory which was only convenient  
-
-popd
 
 #### Now, exit the program  
 
