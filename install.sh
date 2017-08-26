@@ -76,6 +76,9 @@ LOGFILE="${LOG_DIR}/${PROG_NAME}-install_${NOW}.log"
 RPMS_TO_BE_INSTALLED=()
 PACKAGES=("policycoreutils-python" "mongodb-org" "nginx" "gcc" "gcc-c++" "glibc-headers" "openssl-devel" "readline" "libyaml-devel" "readline-devel" "zlib" "zlib-devel" "wget" "git" "ImageMagick" "ImageMagick-devel" "firefox")
 
+NGINX_DIR_COMMON="/etc/nginx/conf.d/common"
+NGINX_DIR_SERVER="/etc/nginx/conf.d/server"
+
 ##################### end .config ###################
 
 ##################### functions ###################
@@ -176,7 +179,9 @@ check_rpms()
         shift
     done
     if [ `echo "${#RPMS_TO_BE_INSTALLED[@]}"` = 0 ]; then
+        echo ""
         echo "All needed packages are installed on this box. Proceeding..."
+        echo ""
         sleep 5
     else
         #echo "${RPMS_TO_BE_INSTALLED[@]}"
@@ -202,7 +207,10 @@ check_shirasagi_dir_exists()
                 break;;
             [nN])
                 echo "Thank you using $0"
-                exit 0;;
+                echo ""
+                echo_installer_has_finished
+                exit 0 
+                ;;
             *)
                 echo "Type y or n"
             esac
@@ -223,7 +231,27 @@ check_shirasagi_dir_exists()
     fi
 }
 
+# check if directory exists and if not create it
+# arg 1: dir_name
+
+check_mkdir()
+{
+    local dir=$1 
+    if [ -d "${dir}" ]; then
+        echo "${dir} exists"
+    else
+        mkdir "${dir}" >/dev/null
+        if [ $? -ne 0 ]; then
+            echo "mkdir ${dir} failed"
+            err_msg
+        else
+            echo "mkdir ${dir} succeeded"
+        fi
+    fi
+}
+
 # check function succeeded 
+# arg 1: command 
 
 check_command_succeeded()
 {
@@ -253,6 +281,7 @@ check_command_runuser()
 }
 
 # check function succeeded (pattern 2, not used)
+# arg 1: command 
 
 try_command_multiple_times()
 {
@@ -269,6 +298,7 @@ try_command_multiple_times()
 }
 
 # clean the BUILD directory (not used) 
+# arg 1: directory 
 
 clean_build_dir()
 {
@@ -301,11 +331,13 @@ ask_domain_name()
 
 #SELinux should be allowed /usr/sbin/httpd to bind to network port <PORT> 
 #set each port and if aready set, modify it
+# arg 1: SELinux port type 
+# arg 2: port number 
 
 semanage_selinux_port()
 {
-    local port_num=$2
     local selinux_port_type=$1
+    local port_num=$2
     semanage port -a -t ${selinux_port_type} -p tcp "${port_num}" 
     if [ $? -ne 0 ]; then
         semanage port -m -t ${selinux_port_type} -p tcp "${port_num}" 
@@ -401,9 +433,11 @@ if [ $? -ne 0 ]; then
     fi
 else
     echo "user shirasagi exists."
+    echo "user shirasagi will be used during installation if needed."
+    echo ""
 fi
 
-#### check_shirasagi directory exists
+#### check_shirasagi directory exists, if it exists, ask deleting it or not
 
 check_shirasagi_dir_exists
 
@@ -730,7 +764,8 @@ proxy_hide_header Link;
 proxy_hide_header ETag;
 EOF
 
-mkdir /etc/nginx/conf.d/{common,server}
+check_mkdir "${NGINX_DIR_COMMON}"
+check_mkdir "${NGINX_DIR_SERVER}"
 
 cat > /etc/nginx/conf.d/common/drop.conf << "EOF"
 location = /favicon.ico                      { expires 1h; access_log off; log_not_found off; }
@@ -910,5 +945,9 @@ echo_installer_has_finished
 #### Back from the directory which was only convenient  
 
 popd
+
+#### Now, exit the program  
+
+exit 0 
 
 ##################### end main part ###################
