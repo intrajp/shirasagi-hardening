@@ -170,7 +170,51 @@ check_rpms()
         fi
         shift
     done
-    echo "${RPMS_TO_BE_INSTALLED[@]}"
+    if [ `echo "${#RPMS_TO_BE_INSTALLED[@]}"` = 0 ]; then
+        echo "All needed packages are installed on this box. Proceeding..."
+        sleep 5
+    else
+        #echo "${RPMS_TO_BE_INSTALLED[@]}"
+        yum -y install "${RPMS_TO_BE_INSTALLED[@]}"
+    fi
+}
+
+# check if shirasagi directory exists 
+
+check_shirasagi_dir_exists()
+{
+    if [ -d "${SS_DIR}" ]; then
+        echo "${SS_DIR} exists."
+        while :
+        do
+            echo "${SS_DIR} should be deleted for installing shirasagi anew."
+            echo "Don't worry, \"${SS_DIR}\" will be made in the installation process."
+            echo -n "Do you delete '${SS_DIR}' ? :[y/N]"
+            read ans
+            case $ans in
+            [yY])
+                break;;
+            [nN])
+                echo "Thank you using $0"
+                exit 0;;
+            *)
+                echo "Type y or n"
+            esac
+        done
+        `rm -rf "${SS_DIR}"` 
+        if [ $? -ne 0 ]; then
+            echo "Deleting ${SS_DIR} failed"
+            err_msg
+        else
+            echo "Deleted directory \"${SS_DIR}\"."
+            echo "${SS_DIR} will be made in the installation process."
+            echo ""
+        fi
+    else
+        echo "${SS_DIR} does not exist."
+        echo "${SS_DIR} will be made in the installation process."
+        echo ""
+    fi
 }
 
 # check function succeeded 
@@ -249,12 +293,8 @@ ask_domain_name()
     fi
 }
 
-#### SELinux needs to httpd_t 
-#Allow /usr/sbin/httpd to bind to network port <PORT> 
-#Modify the port type.
-#where PORT_TYPE is one the following: http_port_t.
-#here we go
-#set each port if aready set,modify it
+#SELinux should be allowed /usr/sbin/httpd to bind to network port <PORT> 
+#set each port and if aready set, modify it
 
 semanage_selinux_port()
 {
@@ -344,14 +384,22 @@ fi
 
 #### Add user shirasagi and lock password 
 
-id -u shirasagi >/dev/null || useradd shirasagi >/dev/null
+id -u shirasagi >/dev/null
 if [ $? -ne 0 ]; then
-    echo "useradd shirasagi failed"
-    err_msg
+    useradd shirasagi >/dev/null
+    if [ $? -ne 0 ]; then
+        echo "useradd shirasagi failed"
+        err_msg
+    else
+        echo "Added user shirasagi and locked password"
+    fi
 else
-    echo "Added shirasagi user and locked password"
-    echo ""
+    echo "user shirasagi exists."
 fi
+
+#### check_shirasagi directory exists
+
+check_shirasagi_dir_exists
 
 #### ask domain name
 
@@ -396,8 +444,8 @@ EOF
 
 #### installing packages which should be present on the box
 
-yum -y install $(check_rpms "${PACKAGES[@]}")
-	
+check_rpms "${PACKAGES[@]}"
+
 #### check all needed packages are present, else exit
 
 for i in ${PACKAGES[@]}
