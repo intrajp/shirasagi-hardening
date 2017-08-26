@@ -95,7 +95,22 @@ FIREWALL_CMD_ADD_PORT_PORT_COMPA="firewall-cmd --add-port=${PORT_COMPA}/tcp --pe
 FIREWALL_CMD_ADD_PORT_PORT_CHILD="firewall-cmd --add-port=${PORT_CHILD}/tcp --permanent"
 FIREWALL_CMD_ADD_PORT_PORT_OPEND="firewall-cmd --add-port=${PORT_OPEND}/tcp --permanent"
 FIREWALL_CMD_RELOAD="firewall-cmd --reload"
+# this goes not well
 RESTORECON_VAR_WWW="restorecon -Rv /var/www"
+
+# Furigana stuff
+
+MECAB="mecab-0.996"
+MECAB_IPADIC="mecab-ipadic-2.7.0-20070801"
+MECAB_RUBY="mecab-ruby-0.996"
+MECAB_IPADIC_PATCH="mecab-ipadic-2.7.0-20070801.patch"
+
+# Voice stuff
+
+HTS_ENGINE="hts_engine_API-1.08"
+OPEN_JTALK="open_jtalk-1.07"
+LAME="lame-3.99.5"
+SOX="sox-14.4.1"
 
 ##################### end .config ###################
 
@@ -350,10 +365,10 @@ try_command_multiple_times()
     ## exec the command
     $(${comm})
     if [ $? -eq 0 ]; then
-        echo "'$comm' succeeded"
+        echo "'${comm}' succeeded"
     else
-        echo "'$comm' failed"
-        check_command_succeeded $comm
+        echo "'${comm}' failed"
+        check_command_succeeded ${comm}
     fi
 }
 
@@ -637,46 +652,48 @@ sed -e "s/disable: true$/disable: false/" config/defaults/recommend.yml > config
 
 echo "######## Furigana stuff ########"
 
-runuser -l shirasagi -c 'wget --no-check-certificate -O mecab-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7cENtOXlicTFaRUE"'
-check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c 'wget --no-check-certificate -O mecab-ipadic-2.7.0-20070801.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7MWVlSDBCSXZMTXM"'
-check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c 'wget --no-check-certificate -O mecab-ruby-0.996.tar.gz "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7VUNlczBWVDZJbE0"'
-check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c 'wget https://raw.githubusercontent.com/shirasagi/shirasagi/stable/vendor/mecab/mecab-ipadic-2.7.0-20070801.patch'
-check_command_runuser "${SS_DIR}"
+pushd /home/shirasagi/${NOW}
+    wget --no-check-certificate -O "${MECAB}.tar.gz" "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7cENtOXlicTFaRUE"
+    chown shirasagi:shirasagi "${MECAB}.tar.gz"
+    wget --no-check-certificate -O "${MECAB_IPADIC}.tar.gz" "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7MWVlSDBCSXZMTXM"
+    chown shirasagi:shirasagi "${MECAB_IPADIC}.tar.gz"
+    wget --no-check-certificate -O "${MECAB_RUBY}.tar.gz" "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7VUNlczBWVDZJbE0"
+    chown shirasagi:shirasagi "${MECAB_RUBY}.tar.gz"
+    wget https://raw.githubusercontent.com/shirasagi/shirasagi/stable/vendor/mecab/"${MECAB_IPADIC_PATCH}"
+    chown shirasagi:shirasagi "${MECAB_IPADIC_PATCH}"
+popd
 
 echo "######## mecab ########"
 
-runuser -l shirasagi -c "tar xvzf mecab-0.996.tar.gz"
+runuser -l shirasagi -c "cd ~/${NOW} && tar xvzf ${MECAB}.tar.gz"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd mecab-0.996;./configure --enable-utf8-only"
+runuser -l shirasagi -c "cd ~/${NOW}/${MECAB} && ./configure --enable-utf8-only"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd mecab-0.996;make"
+runuser -l shirasagi -c "cd ~/${NOW}/${MECAB} && make"
 check_command_runuser "${SS_DIR}"
-pushd /home/shirasagi/mecab-0.996
+pushd /home/shirasagi/${NOW}/${MECAB}
     pwd
     make install
 popd
 
-echo "######## mecab-ipadic-2.7.0-20070801 ########"
+echo "######## mecab-ipadic ########"
 
-runuser -l shirasagi -c "tar xvzf mecab-ipadic-2.7.0-20070801.tar.gz"
+runuser -l shirasagi -c "cd ~/${NOW} && tar xvzf ${MECAB_IPADIC}.tar.gz"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd mecab-ipadic-2.7.0-20070801;patch -p1 < ../mecab-ipadic-2.7.0-20070801.patch;./configure --with-charset=UTF-8;make"
+runuser -l shirasagi -c "cd ~/${NOW}/${MECAB_IPADIC} && patch -p1 < ../${MECAB_IPADIC_PATCH} && ./configure --with-charset=UTF-8 && make"
 check_command_runuser "${SS_DIR}"
-pushd /home/shirasagi/mecab-ipadic-2.7.0-20070801
+pushd /home/shirasagi/${NOW}/${MECAB_IPADIC}
     pwd
     make install
 popd
 
 echo "######## mecab-ruby ########"
 
-runuser -l shirasagi -c "tar xvzf mecab-ruby-0.996.tar.gz"
+runuser -l shirasagi -c "cd ~/${NOW} && tar xvzf ${MECAB_RUBY}.tar.gz"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd mecab-ruby-0.996;ruby extconf.rb;make"
+runuser -l shirasagi -c "cd ~/${NOW}/${MECAB_RUBY} && ruby extconf.rb && make"
 check_command_runuser "${SS_DIR}"
-pushd /home/shirasagi/mecab-ruby-0.996
+pushd /home/shirasagi/${NOW}/${MECAB_RUBY}
     pwd
     make install
 popd
@@ -687,65 +704,66 @@ cat >> /etc/ld.so.conf << "EOF"
 /usr/local/lib
 EOF
 
-ldconfig
+check_command_succeeded ldconfig
 
 #### Voice
 
 echo "######## Voice stuff ########"
 
-runuser -l shirasagi -c "wget http://downloads.sourceforge.net/hts-engine/hts_engine_API-1.08.tar.gz \
-    http://downloads.sourceforge.net/open-jtalk/open_jtalk-1.07.tar.gz \
-    http://downloads.sourceforge.net/lame/lame-3.99.5.tar.gz \
-    http://downloads.sourceforge.net/sox/sox-14.4.1.tar.gz"
+
+runuser -l shirasagi -c "cd ~/${NOW} && wget http://downloads.sourceforge.net/hts-engine/${HTS_ENGINE}.tar.gz \
+    http://downloads.sourceforge.net/open-jtalk/${OPEN_JTALK}.tar.gz \
+    http://downloads.sourceforge.net/lame/${LAME}.tar.gz \
+    http://downloads.sourceforge.net/sox/${SOX}.tar.gz"
 check_command_runuser "${SS_DIR}"
 
-echo "######## hts_engine_API-1.08 ########"
+echo "######## hts_engine ########"
 
-runuser -l shirasagi -c "tar xvzf hts_engine_API-1.08.tar.gz"
+runuser -l shirasagi -c "cd ~/${NOW} && tar xvzf ${HTS_ENGINE}.tar.gz"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd hts_engine_API-1.08;./configure;make"
+runuser -l shirasagi -c "cd ~/${NOW}/${HTS_ENGINE} && ./configure && make"
 check_command_runuser "${SS_DIR}"
-pushd /home/shirasagi/hts_engine_API-1.08
+pushd /home/shirasagi/${NOW}/${HTS_ENGINE}
     make install
 popd
 
-echo "######## open_jtalk-1.07 ########"
+echo "######## open_jtalk ########"
 
-runuser -l shirasagi -c "tar xvzf open_jtalk-1.07.tar.gz"
+runuser -l shirasagi -c "cd ~/${NOW} && tar xvzf ${OPEN_JTALK}.tar.gz"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "sed -i \"s/#define MAXBUFLEN 1024/#define MAXBUFLEN 10240/\" open_jtalk-1.07/bin/open_jtalk.c"
+runuser -l shirasagi -c "cd ~/${NOW} && sed -i \"s/#define MAXBUFLEN 1024/#define MAXBUFLEN 10240/\" ${OPEN_JTALK}/bin/open_jtalk.c"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "sed -i \"s/0x00D0 SPACE/0x000D SPACE/\" open_jtalk-1.07/mecab-naist-jdic/char.def"
+runuser -l shirasagi -c "cd ~/${NOW} && sed -i \"s/0x00D0 SPACE/0x000D SPACE/\" ${OPEN_JTALK}/mecab-naist-jdic/char.def"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd open_jtalk-1.07;./configure;make"
+runuser -l shirasagi -c "cd ~/${NOW}/${OPEN_JTALK} && ./configure && make"
 check_command_runuser "${SS_DIR}"
-pushd /home/shirasagi/open_jtalk-1.07
+pushd /home/shirasagi/${NOW}/${OPEN_JTALK}
     make install
 popd
 
-echo "######## lame-3.99.5 ########"
+echo "######## lame ########"
 
-runuser -l shirasagi -c "tar xvzf lame-3.99.5.tar.gz"
+runuser -l shirasagi -c "cd ~/${NOW} && tar xvzf ${LAME}.tar.gz"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd lame-3.99.5;./configure;make"
+runuser -l shirasagi -c "cd ~/${NOW}/${LAME} && ./configure && make"
 check_command_runuser "${SS_DIR}"
-pushd /home/shirasagi/lame-3.99.5
+pushd /home/shirasagi/${NOW}/${LAME}
     make install
 popd
 
-echo "######## sox-14.4.1 ########"
+echo "######## sox ########"
 
-runuser -l shirasagi -c "tar xvzf sox-14.4.1.tar.gz"
+runuser -l shirasagi -c "cd ~/${NOW} && tar xvzf ${SOX}.tar.gz"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd sox-14.4.1;./configure;make"
+runuser -l shirasagi -c "cd ~/${NOW}/${SOX} && ./configure && make"
 check_command_runuser "${SS_DIR}"
-pushd /home/shirasagi/sox-14.4.1
+pushd /home/shirasagi/${NOW}/${SOX}
     make install
 popd
 
 echo "######## ldconfig ########"
 
-ldconfig
+check_command_succeeded ldconfig
 
 #### setting nginx
 
@@ -896,29 +914,29 @@ check_command_succeeded "${SYSTEMCTL_ENABLE_SHIRASAGI_UNICORN}" "${SS_DIR}"
 
 check_command_succeeded "${SYSTEMCTL_DAEMON_RELOAD}" "${SS_DIR}"
 
-runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:drop"
+runuser -l shirasagi -c "cd ${SS_DIR} && ./bin/bundle exec ./bin/rake db:drop"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:create_indexes"
+runuser -l shirasagi -c "cd ${SS_DIR} && ./bin/bundle exec ./bin/rake db:create_indexes"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"自治体サンプル\", host: \"www\", domains: \"${SS_HOSTNAME}\" }'"
+runuser -l shirasagi -c "cd ${SS_DIR} && ./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"自治体サンプル\", host: \"www\", domains: \"${SS_HOSTNAME}\" }'"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"企業サンプル\", host: \"company\", domains: \"${SS_HOSTNAME}:${PORT_COMPA}\" }'"
+runuser -l shirasagi -c "cd ${SS_DIR} && ./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"企業サンプル\", host: \"company\", domains: \"${SS_HOSTNAME}:${PORT_COMPA}\" }'"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"子育て支援サンプル\", host: \"childcare\", domains: \"${SS_HOSTNAME}:${PORT_CHILD}\" }'"
+runuser -l shirasagi -c "cd ${SS_DIR} && ./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"子育て支援サンプル\", host: \"childcare\", domains: \"${SS_HOSTNAME}:${PORT_CHILD}\" }'"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"オープンデータサンプル\", host: \"opendata\", domains: \"${SS_HOSTNAME}:${PORT_OPEND}\" }'"
+runuser -l shirasagi -c "cd ${SS_DIR} && ./bin/bundle exec ./bin/rake ss:create_site data='{ name: \"オープンデータサンプル\", host: \"opendata\", domains: \"${SS_HOSTNAME}:${PORT_OPEND}\" }'"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=demo site=www"
+runuser -l shirasagi -c "cd ${SS_DIR} && ./bin/bundle exec ./bin/rake db:seed name=demo site=www"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=company site=company"
+runuser -l shirasagi -c "cd ${SS_DIR} && ./bin/bundle exec ./bin/rake db:seed name=company site=company"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=childcare site=childcare"
+runuser -l shirasagi -c "cd ${SS_DIR} && ./bin/bundle exec ./bin/rake db:seed name=childcare site=childcare"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=opendata site=opendata"
+runuser -l shirasagi -c "cd ${SS_DIR} && ./bin/bundle exec ./bin/rake db:seed name=opendata site=opendata"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=gws"
+runuser -l shirasagi -c "cd ${SS_DIR} && ./bin/bundle exec ./bin/rake db:seed name=gws"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake db:seed name=webmail"
+runuser -l shirasagi -c "cd ${SS_DIR} && ./bin/bundle exec ./bin/rake db:seed name=webmail"
 check_command_runuser "${SS_DIR}"
 
 #### start shirasagi-unicorn
@@ -928,9 +946,9 @@ check_command_succeeded "${SYSTEMCTL_START_SHIRASAGI_UNICORN}" "${SS_DIR}"
 # use openlayers as default map
 echo 'db.ss_sites.update({}, { $set: { map_api: "openlayers" } }, { multi: true });' | mongo ss > /dev/null
 
-runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake cms:generate_nodes"
+runuser -l shirasagi -c "cd ${SS_DIR} && ./bin/bundle exec ./bin/rake cms:generate_nodes"
 check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ${SS_DIR};./bin/bundle exec ./bin/rake cms:generate_pages"
+runuser -l shirasagi -c "cd ${SS_DIR} && ./bin/bundle exec ./bin/rake cms:generate_pages"
 check_command_runuser "${SS_DIR}"
 
 cat >> crontab << "EOF"
