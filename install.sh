@@ -62,10 +62,14 @@ SELINUX_PORT_TYPE="http_port_t"
 
 SCRIPT_DIR="/tmp"
 
+#### log directory 
+
+LOG_DIR="/var/log"
+
 #### logfile
 
 NOW=`date +%Y%m%d%H%M%S`
-LOGFILE="${PROG_NAME}_install-log_${NOW}.log"
+LOGFILE="${LOG_DIR}/${PROG_NAME}-install_${NOW}.log"
 
 #### list of packages which should be present on the box
 
@@ -89,6 +93,7 @@ mklog()
 err_msg()
 {
     echo "Oops! Something went wrong!"
+    echo "Check log file in ${LOGFILE} for detail"
     exit 1
 }
 
@@ -108,7 +113,7 @@ echo_installer_has_finished()
 {
     echo "########"
     echo "${PROG_NAME} installer has finished"
-    echo "check install log file ${LOGFILE} in ${SCRIPT_DIR} for detail"
+    echo "check install log file ${LOGFILE} for detail"
     echo "########"
 }
 
@@ -188,8 +193,9 @@ check_shirasagi_dir_exists()
         while :
         do
             echo "${SS_DIR} should be deleted for installing shirasagi anew."
-            echo "Don't worry, \"${SS_DIR}\" will be made in the installation process."
-            echo -n "Do you delete '${SS_DIR}' ? :[y/N]"
+            echo "Don't worry, ${SS_DIR} will be made in the installation process."
+            echo ""
+            echo -n "Do you delete ${SS_DIR} ? :[y/N]"
             read ans
             case $ans in
             [yY])
@@ -206,7 +212,7 @@ check_shirasagi_dir_exists()
             echo "Deleting ${SS_DIR} failed"
             err_msg
         else
-            echo "Deleted directory \"${SS_DIR}\"."
+            echo "Deleted directory ${SS_DIR}."
             echo "${SS_DIR} will be made in the installation process."
             echo ""
         fi
@@ -419,7 +425,7 @@ do
     esac
 done
 
-echo "Domain name will be set to \"${SS_HOSTNAME}\""
+echo "Domain name will be set to '${SS_HOSTNAME}'"
 
 #### repo file for mongodb
 
