@@ -591,7 +591,7 @@ gem install bundler
 
 #### cloning shirasagi and coping files to dir
 
-runuser -l shirasagi -c "cd ~;mkdir ${NOW};cd ${NOW};git clone -b stable --depth 1 https://github.com/shirasagi/shirasagi"
+runuser -l shirasagi -c "cd ~ && mkdir ${NOW} && cd ${NOW} && git clone -b stable --depth 1 https://github.com/shirasagi/shirasagi"
 check_command_runuser
 mkdir -p /var/www
 mv /home/shirasagi/${NOW}/shirasagi ${SS_DIR}
