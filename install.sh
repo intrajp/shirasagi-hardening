@@ -48,6 +48,7 @@ SELINUX=""
 
 #SS_HOSTNAME=${1:-"example.jp"}
 #SS_USER=${2:-"$USER"}
+SS_HOSTNAME="example.jp"
 SS_DIR="/var/www/${PROG_NAME}"
 # this variable would be used for deleting directory when command failed
 CLEAN_DIR="${SS_DIR}"
@@ -222,16 +223,16 @@ check_rpms()
     done
     if [ `echo "${#RPMS_TO_BE_INSTALLED[@]}"` = 0 ]; then
         echo ""
-        echo "All needed packages are installed on this box. Proceeding..."
+        echo "All needed packages are installed for shirasagi on this box. Proceeding..."
         echo ""
         sleep 5
     else
         echo ""
-        echo "These packages are needed to be installed on this box."
+        echo "These packages are needed for shirasagi on this box."
         echo ""
         echo "${RPMS_TO_BE_INSTALLED[@]}"
         echo ""
-        echo "Download and install will be start in 10 seconds."
+        echo "Download and install these packages will start in 10 seconds."
         sleep 10 
         echo ""
         yum -y install "${RPMS_TO_BE_INSTALLED[@]}"
@@ -410,7 +411,6 @@ try_command_multiple_times()
 ask_domain_name()
 {
     local ans=""
-    SS_HOSTNAME="example.jp"
     echo -n "Set domain name [example.jp]:"
     read ans
     ## just trim white space
