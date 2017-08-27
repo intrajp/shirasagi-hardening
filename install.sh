@@ -77,6 +77,26 @@ PACKAGES=("policycoreutils-python" "mongodb-org" "nginx" "gcc" "gcc-c++" "glibc-
 NGINX_DIR_COMMON="/etc/nginx/conf.d/common"
 NGINX_DIR_SERVER="/etc/nginx/conf.d/server"
 
+#### Ruby related softwares 
+
+# rvm version 
+
+RVM_VERSION="2.3.4"
+
+# Furigana stuff
+
+MECAB="mecab-0.996"
+MECAB_IPADIC="mecab-ipadic-2.7.0-20070801"
+MECAB_RUBY="mecab-ruby-0.996"
+MECAB_IPADIC_PATCH="mecab-ipadic-2.7.0-20070801.patch"
+
+# Voice stuff
+
+HTS_ENGINE="hts_engine_API-1.08"
+OPEN_JTALK="open_jtalk-1.07"
+LAME="lame-3.99.5"
+SOX="sox-14.4.1"
+
 # set commands for using command check function will use them easily
 
 SYSTEMCTL_START_MONGOD="systemctl start mongod.service"
@@ -98,19 +118,8 @@ FIREWALL_CMD_RELOAD="firewall-cmd --reload"
 # this goes not well
 RESTORECON_VAR_WWW="restorecon -Rv /var/www"
 
-# Furigana stuff
-
-MECAB="mecab-0.996"
-MECAB_IPADIC="mecab-ipadic-2.7.0-20070801"
-MECAB_RUBY="mecab-ruby-0.996"
-MECAB_IPADIC_PATCH="mecab-ipadic-2.7.0-20070801.patch"
-
-# Voice stuff
-
-HTS_ENGINE="hts_engine_API-1.08"
-OPEN_JTALK="open_jtalk-1.07"
-LAME="lame-3.99.5"
-SOX="sox-14.4.1"
+MV_TMP_DIR_TO_SS_DIR="mv /home/shirasagi/${NOW}/shirasagi ${SS_DIR}"
+IMPORT_RVM_KEY="eval curl -sSL https://rvm.io/mpapis.asc | gpg2 --import -"
 
 ##################### end .config ###################
 
@@ -217,7 +226,14 @@ check_rpms()
         echo ""
         sleep 5
     else
-        #echo "${RPMS_TO_BE_INSTALLED[@]}"
+        echo ""
+        echo "These packages are needed to be installed on this box."
+        echo ""
+        echo "${RPMS_TO_BE_INSTALLED[@]}"
+        echo ""
+        echo "Download and install will be start in 10 seconds."
+        sleep 10 
+        echo ""
         yum -y install "${RPMS_TO_BE_INSTALLED[@]}"
     fi
 }
@@ -273,12 +289,12 @@ check_mkdir()
     if [ -d "${dir}" ]; then
         echo "${dir} exists"
     else
-        mkdir "${dir}" >/dev/null
+        mkdir -p "${dir}" >/dev/null
         if [ $? -ne 0 ]; then
-            echo "mkdir ${dir} failed"
+            echo "mkdir -p ${dir} failed"
             err_msg
         else
-            echo "mkdir ${dir} succeeded"
+            echo "mkdir -p ${dir} succeeded"
         fi
     fi
 }
@@ -351,25 +367,42 @@ check_command_runuser()
     fi
 }
 
-# check function succeeded (pattern 2, not used)
+# check function succeeded (try multiple times)
 # arg 1: command 
+# arg 2 (option): number (if not set, default is set to 3) 
 
 try_command_multiple_times()
 {
+    local times=3 
     if [ -z "$1" ]; then
         echo "function error"
         err_msg
     fi
-    local comm
-    comm=$1
-    ## exec the command
-    $(${comm})
-    if [ $? -eq 0 ]; then
-        echo "'${comm}' succeeded"
+    if [ -z "$2" ]; then
+       times=3 
     else
-        echo "'${comm}' failed"
-        check_command_succeeded ${comm}
+       times="$2" 
     fi
+    local comm
+    comm="${1}"
+echo "----------"
+echo $comm
+echo "----------"
+    for i in $(seq 1 $times)
+    do
+        ## exec the command
+        $(${comm})
+        if [ $? -eq 0 ]; then
+            echo "'${comm}' succeeded"
+            return 1 
+        else
+            if [ $i = $times ]; then
+                echo "'${comm}' failed"
+            fi
+            sleep 5
+        fi
+        return 1 
+    done
 }
 
 # ask domain name
@@ -581,35 +614,36 @@ check_command_succeeded "${SYSTEMCTL_START_NGINX}"
 
 #### getting gpg key
 
-for i in $(seq 1 3)
-do
-    curl -sSL https://rvm.io/mpapis.asc | gpg2 --import -
-    if [ $? -eq 0 ]; then
-        break
-    fi
-    sleep 5s
-done
+try_command_multiple_times "${IMPORT_RVM_KEY}"
 
-#### setting something, dont konw what it is (is this ruby ?)
+echo "#### got key ####"
 
-\curl -sSL https://get.rvm.io | bash -s stable
+#### getting rvm from certain place (this will make /usr/local/rvm)
+
+curl -sSL https://get.rvm.io | bash -s stable
 
 RVM_HOME=/usr/local/rvm
 
 #### installing rvm
 
-export PATH=\"$PATH:$RVM_HOME/bin\"
+export PATH="$PATH:$RVM_HOME/bin"
+echo ""
+echo "Check env PATH"
+echo ""
+echo $PATH
+echo ""
 source $RVM_HOME/scripts/rvm
-rvm install 2.3.4
-rvm use 2.3.4 --default
+
+rvm install "${RVM_VERSION}" 
+rvm use ${RVM_VERSION} --default
 gem install bundler
 
 #### cloning shirasagi and coping files to dir
 
 runuser -l shirasagi -c "cd ~ && mkdir ${NOW} && cd ${NOW} && git clone -b stable --depth 1 https://github.com/shirasagi/shirasagi"
 check_command_runuser
-mkdir -p /var/www
-mv /home/shirasagi/${NOW}/shirasagi ${SS_DIR}
+check_mkdir /var/www
+check_command_succeeded "${MV_TMP_DIR_TO_SS_DIR}"
 
 echo ""
 echo "#### Now, restoring context under /var/www, because when certain directory had been moved, SELinux label would not be 'should be state'."
@@ -654,12 +688,10 @@ echo "######## Furigana stuff ########"
 
 pushd /home/shirasagi/${NOW}
     wget --no-check-certificate -O "${MECAB}.tar.gz" "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7cENtOXlicTFaRUE"
-    chown shirasagi:shirasagi "${MECAB}.tar.gz"
     wget --no-check-certificate -O "${MECAB_IPADIC}.tar.gz" "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7MWVlSDBCSXZMTXM"
-    chown shirasagi:shirasagi "${MECAB_IPADIC}.tar.gz"
     wget --no-check-certificate -O "${MECAB_RUBY}.tar.gz" "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7VUNlczBWVDZJbE0"
-    chown shirasagi:shirasagi "${MECAB_RUBY}.tar.gz"
     wget https://raw.githubusercontent.com/shirasagi/shirasagi/stable/vendor/mecab/"${MECAB_IPADIC_PATCH}"
+    chown shirasagi:shirasagi *.tar.gz
     chown shirasagi:shirasagi "${MECAB_IPADIC_PATCH}"
 popd
 
