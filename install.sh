@@ -385,9 +385,9 @@ try_command_multiple_times()
     fi
     local comm
     comm="${1}"
-echo "----------"
-echo $comm
-echo "----------"
+    echo "----------"
+    echo $comm
+    echo "----------"
     for i in $(seq 1 $times)
     do
         ## exec the command
