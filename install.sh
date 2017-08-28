@@ -46,8 +46,6 @@ SELINUX=""
 
 ## hostname and user will be ask and set later, so...
 
-#SS_HOSTNAME=${1:-"example.jp"}
-#SS_USER=${2:-"$USER"}
 SS_HOSTNAME="example.jp"
 SS_DIR="/var/www/${PROG_NAME}"
 # this variable would be used for deleting directory when command failed
@@ -453,6 +451,7 @@ semanage_selinux_port()
 }
 
 # clean git cloned directory
+
 clean_git_cloned_dir()
 {
     rm -rf /home/shirasagi/${NOW}
@@ -461,6 +460,25 @@ clean_git_cloned_dir()
     else
         echo "Failed cleaning git cloned directory"
     fi
+}
+
+# make program with some user
+# arg 1: program_name 
+
+make_program()
+{
+    if [ -z "$1" ]; then
+        echo "function error"
+        err_msg
+    fi
+    local program=$1
+    runuser -l shirasagi -c "cd ~/${NOW} && tar xvzf ${program}.tar.gz"
+    check_command_runuser "${SS_DIR}"
+    runuser -l shirasagi -c "cd ~/${NOW}/${program} && ./configure && make"
+    check_command_runuser "${SS_DIR}"
+    pushd /home/shirasagi/${NOW}/${program}
+        make install
+    popd
 }
 
 ##################### end functions ###################
@@ -742,8 +760,7 @@ check_command_succeeded ldconfig
 
 echo "######## Voice stuff ########"
 
-
-runuser -l shirasagi -c "cd ~/${NOW} && wget http://downloads.sourceforge.net/hts-engine/${HTS_ENGINE}.tar.gz \
+runuser -l shirasagi -c "cd ~/${NOW} && wget --no-check-certificate http://downloads.sourceforge.net/hts-engine/${HTS_ENGINE}.tar.gz \
     http://downloads.sourceforge.net/open-jtalk/${OPEN_JTALK}.tar.gz \
     http://downloads.sourceforge.net/lame/${LAME}.tar.gz \
     http://downloads.sourceforge.net/sox/${SOX}.tar.gz"
@@ -751,13 +768,7 @@ check_command_runuser "${SS_DIR}"
 
 echo "######## hts_engine ########"
 
-runuser -l shirasagi -c "cd ~/${NOW} && tar xvzf ${HTS_ENGINE}.tar.gz"
-check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ~/${NOW}/${HTS_ENGINE} && ./configure && make"
-check_command_runuser "${SS_DIR}"
-pushd /home/shirasagi/${NOW}/${HTS_ENGINE}
-    make install
-popd
+make_program "${HTS_ENGINE}"
 
 echo "######## open_jtalk ########"
 
@@ -775,23 +786,11 @@ popd
 
 echo "######## lame ########"
 
-runuser -l shirasagi -c "cd ~/${NOW} && tar xvzf ${LAME}.tar.gz"
-check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ~/${NOW}/${LAME} && ./configure && make"
-check_command_runuser "${SS_DIR}"
-pushd /home/shirasagi/${NOW}/${LAME}
-    make install
-popd
+make_program "${LAME}"
 
 echo "######## sox ########"
 
-runuser -l shirasagi -c "cd ~/${NOW} && tar xvzf ${SOX}.tar.gz"
-check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ~/${NOW}/${SOX} && ./configure && make"
-check_command_runuser "${SS_DIR}"
-pushd /home/shirasagi/${NOW}/${SOX}
-    make install
-popd
+make_program "${SOX}"
 
 echo "######## ldconfig ########"
 
