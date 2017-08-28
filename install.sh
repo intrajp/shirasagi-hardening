@@ -464,17 +464,52 @@ clean_git_cloned_dir()
 
 # make program with some user
 # arg 1: program_name 
+# arg 2 (option, set NULL if not needed): configure option 
+# arg 3 (option, set NULL if not needed): patching 
+# arg 4 (option, set NULL if not needed): configure 
+# arg 5 (option, set NULL if not needed): sed command 
+# arg 6 (option, set NULL if not needed): sed command 
 
 make_program()
 {
-    if [ -z "$1" ]; then
-        echo "function error"
+    local program=$1
+    local configure_option=$2
+    local patch=$3
+    local configure=$4
+    local sed_1=$5
+    local sed_2=$6
+
+    if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] || [ -z "$5" ] || [ -z "$6" ] ; then
+        echo "Function error. Some argument(s) are lacking."
         err_msg
     fi
-    local program=$1
+    if [ "$2" = "NULL" ]; then
+       configure_option="" 
+    fi
+    if [ "$3" = "NULL" ]; then
+       patch="" 
+    fi
+    if [ "$4" = "NULL" ]; then
+       configure="&& ./configure" 
+    fi
+    if [ "$5" != "ON" ]; then
+       sed_1="off" 
+    fi
+    if [ "$6" != "ON" ]; then
+       sed_2="off" 
+    fi
+
     runuser -l shirasagi -c "cd ~/${NOW} && tar xvzf ${program}.tar.gz"
     check_command_runuser "${SS_DIR}"
-    runuser -l shirasagi -c "cd ~/${NOW}/${program} && ./configure && make"
+    if [ $sed_1 = "ON" ]; then
+        runuser -l shirasagi -c "cd ~/${NOW} && sed -i \"s/#define MAXBUFLEN 1024/#define MAXBUFLEN 10240/\" ${OPEN_JTALK}/bin/open_jtalk.c"
+        check_command_runuser "${SS_DIR}"
+    fi
+    if [ $sed_2 = "ON" ]; then
+        runuser -l shirasagi -c "cd ~/${NOW} && sed -i \"s/0x00D0 SPACE/0x000D SPACE/\" ${OPEN_JTALK}/mecab-naist-jdic/char.def"
+        check_command_runuser "${SS_DIR}"
+    fi
+    runuser -l shirasagi -c "cd ~/${NOW}/${program} ${patch} ${configure} ${configure_option} && make"
     check_command_runuser "${SS_DIR}"
     pushd /home/shirasagi/${NOW}/${program}
         make install
@@ -715,38 +750,15 @@ popd
 
 echo "######## mecab ########"
 
-runuser -l shirasagi -c "cd ~/${NOW} && tar xvzf ${MECAB}.tar.gz"
-check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ~/${NOW}/${MECAB} && ./configure --enable-utf8-only"
-check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ~/${NOW}/${MECAB} && make"
-check_command_runuser "${SS_DIR}"
-pushd /home/shirasagi/${NOW}/${MECAB}
-    pwd
-    make install
-popd
+make_program "${MECAB}" "--enable-utf8-only" "NULL" "NULL" "NULL" "NULL"
 
 echo "######## mecab-ipadic ########"
 
-runuser -l shirasagi -c "cd ~/${NOW} && tar xvzf ${MECAB_IPADIC}.tar.gz"
-check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ~/${NOW}/${MECAB_IPADIC} && patch -p1 < ../${MECAB_IPADIC_PATCH} && ./configure --with-charset=UTF-8 && make"
-check_command_runuser "${SS_DIR}"
-pushd /home/shirasagi/${NOW}/${MECAB_IPADIC}
-    pwd
-    make install
-popd
+make_program "${MECAB_IPADIC}" "--enable-utf8-only" "&& patch -p1 < ../${MECAB_IPADIC_PATCH}" "NULL" "NULL" "NULL"
 
 echo "######## mecab-ruby ########"
 
-runuser -l shirasagi -c "cd ~/${NOW} && tar xvzf ${MECAB_RUBY}.tar.gz"
-check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ~/${NOW}/${MECAB_RUBY} && ruby extconf.rb && make"
-check_command_runuser "${SS_DIR}"
-pushd /home/shirasagi/${NOW}/${MECAB_RUBY}
-    pwd
-    make install
-popd
+make_program "${MECAB_RUBY}" "NULL" "NULL" "&& ruby extconf.rb" "NULL" "NULL"
 
 echo "######## ldconfig ########"
 
@@ -768,29 +780,19 @@ check_command_runuser "${SS_DIR}"
 
 echo "######## hts_engine ########"
 
-make_program "${HTS_ENGINE}"
+make_program "${HTS_ENGINE}" "NULL" "NULL" "NULL" "NULL" "NULL"
 
 echo "######## open_jtalk ########"
 
-runuser -l shirasagi -c "cd ~/${NOW} && tar xvzf ${OPEN_JTALK}.tar.gz"
-check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ~/${NOW} && sed -i \"s/#define MAXBUFLEN 1024/#define MAXBUFLEN 10240/\" ${OPEN_JTALK}/bin/open_jtalk.c"
-check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ~/${NOW} && sed -i \"s/0x00D0 SPACE/0x000D SPACE/\" ${OPEN_JTALK}/mecab-naist-jdic/char.def"
-check_command_runuser "${SS_DIR}"
-runuser -l shirasagi -c "cd ~/${NOW}/${OPEN_JTALK} && ./configure && make"
-check_command_runuser "${SS_DIR}"
-pushd /home/shirasagi/${NOW}/${OPEN_JTALK}
-    make install
-popd
+make_program "${OPEN_JTALK}" "NULL" "NULL" "NULL" "ON" "ON"
 
 echo "######## lame ########"
 
-make_program "${LAME}"
+make_program "${LAME}" "NULL" "NULL" "NULL" "NULL" "NULL"
 
 echo "######## sox ########"
 
-make_program "${SOX}"
+make_program "${SOX}" "NULL" "NULL" "NULL" "NULL" "NULL"
 
 echo "######## ldconfig ########"
 
