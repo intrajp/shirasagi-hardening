@@ -516,6 +516,29 @@ make_program()
     popd
 }
 
+# check file numbers in certain directory
+# arg 1: directory name
+# arg 2: numbers which should be present
+
+check_file_numbers_in_directory()
+{
+    if [ -z "$1" ] || [ -z "$2" ] ; then
+        echo "Function error. Some argument(s) are lacking."
+        err_msg
+    fi
+    directory=$1
+    numbers=$2
+    if [ `find "${directory}" -maxdepth 1 -type f 2>/dev/null | wc -l` -ne "${numbers}" ];then
+        echo ""
+        echo "Files should be ${numbers} in ${directory}"
+        err_msg
+    else
+        echo ""
+        echo "Files are ${numbers} in ${directory}. It's OK."
+        echo ""
+    fi
+}
+
 ##################### end functions ###################
 
 ##################### main part ###################
@@ -578,7 +601,7 @@ else
     echo ""
 fi
 
-#### check_shirasagi directory exists, if it exists, ask deleting it or not
+#### check_shirasagi directory in /var/www exists, if it exists, ask deleting it or not
 
 check_shirasagi_dir_exists
 
@@ -639,6 +662,36 @@ do
 done
 echo "######## All needed packages are install on this box ########"
 
+#### making temporary directory in /home/shirasagi 
+
+runuser -l shirasagi -c "cd ~ && mkdir ${NOW}"
+check_command_runuser
+
+#### installing furigana and voice packages
+
+pushd /home/shirasagi/${NOW}
+    wget --no-check-certificate -O "${MECAB}.tar.gz" "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7cENtOXlicTFaRUE"
+    wget --no-check-certificate -O "${MECAB_IPADIC}.tar.gz" "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7MWVlSDBCSXZMTXM"
+    wget --no-check-certificate -O "${MECAB_RUBY}.tar.gz" "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7VUNlczBWVDZJbE0"
+    wget https://raw.githubusercontent.com/shirasagi/shirasagi/stable/vendor/mecab/"${MECAB_IPADIC_PATCH}"
+    chown shirasagi:shirasagi *.tar.gz
+    chown shirasagi:shirasagi "${MECAB_IPADIC_PATCH}"
+popd
+
+ls -l /home/shirasagi/${NOW}
+check_file_numbers_in_directory "/home/shirasagi/${NOW}" 4
+sleep 10
+
+runuser -l shirasagi -c "cd ~/${NOW} && wget --no-check-certificate http://downloads.sourceforge.net/hts-engine/${HTS_ENGINE}.tar.gz \
+    http://downloads.sourceforge.net/open-jtalk/${OPEN_JTALK}.tar.gz \
+    http://downloads.sourceforge.net/lame/${LAME}.tar.gz \
+    http://downloads.sourceforge.net/sox/${SOX}.tar.gz"
+check_command_runuser "${SS_DIR}"
+
+ls -l /home/shirasagi/${NOW}
+check_file_numbers_in_directory "/home/shirasagi/${NOW}" 8
+sleep 10
+
 #### start mongod and enable it 
 
 check_command_succeeded "${SYSTEMCTL_START_MONGOD}"
@@ -693,7 +746,8 @@ gem install bundler
 
 #### cloning shirasagi and coping files to dir
 
-runuser -l shirasagi -c "cd ~ && mkdir ${NOW} && cd ${NOW} && git clone -b stable --depth 1 https://github.com/shirasagi/shirasagi"
+#runuser -l shirasagi -c "cd ~ && mkdir ${NOW} && cd ${NOW} && git clone -b stable --depth 1 https://github.com/shirasagi/shirasagi"
+runuser -l shirasagi -c "cd ~/${NOW} && git clone -b stable --depth 1 https://github.com/shirasagi/shirasagi"
 check_command_runuser
 check_mkdir /var/www
 check_command_succeeded "${MV_TMP_DIR_TO_SS_DIR}"
@@ -735,18 +789,9 @@ sed -i "s/dbcae379.*$/`bundle exec rake secret`/" config/secrets.yml
 
 sed -e "s/disable: true$/disable: false/" config/defaults/recommend.yml > config/recommend.yml
 
-#### Furigana
+#### Furigana (files should be downloaded by this time)
 
 echo "######## Furigana stuff ########"
-
-pushd /home/shirasagi/${NOW}
-    wget --no-check-certificate -O "${MECAB}.tar.gz" "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7cENtOXlicTFaRUE"
-    wget --no-check-certificate -O "${MECAB_IPADIC}.tar.gz" "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7MWVlSDBCSXZMTXM"
-    wget --no-check-certificate -O "${MECAB_RUBY}.tar.gz" "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7VUNlczBWVDZJbE0"
-    wget https://raw.githubusercontent.com/shirasagi/shirasagi/stable/vendor/mecab/"${MECAB_IPADIC_PATCH}"
-    chown shirasagi:shirasagi *.tar.gz
-    chown shirasagi:shirasagi "${MECAB_IPADIC_PATCH}"
-popd
 
 echo "######## mecab ########"
 
@@ -768,15 +813,9 @@ EOF
 
 check_command_succeeded ldconfig
 
-#### Voice
+#### Voice (files should be downloaded by this time)
 
 echo "######## Voice stuff ########"
-
-runuser -l shirasagi -c "cd ~/${NOW} && wget --no-check-certificate http://downloads.sourceforge.net/hts-engine/${HTS_ENGINE}.tar.gz \
-    http://downloads.sourceforge.net/open-jtalk/${OPEN_JTALK}.tar.gz \
-    http://downloads.sourceforge.net/lame/${LAME}.tar.gz \
-    http://downloads.sourceforge.net/sox/${SOX}.tar.gz"
-check_command_runuser "${SS_DIR}"
 
 echo "######## hts_engine ########"
 
