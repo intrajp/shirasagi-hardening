@@ -660,14 +660,14 @@ do
         err_msg
     fi
 done
-echo "######## All needed packages are install on this box ########"
+echo "######## All needed RPM packages are install on this box ########"
 
 #### making temporary directory in /home/shirasagi 
 
 runuser -l shirasagi -c "cd ~ && mkdir ${NOW}"
 check_command_runuser
 
-#### installing furigana and voice packages
+#### downloading furigana and voice packages
 
 pushd /home/shirasagi/${NOW}
     wget --no-check-certificate -O "${MECAB}.tar.gz" "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7cENtOXlicTFaRUE"
@@ -692,7 +692,13 @@ ls -l /home/shirasagi/${NOW}
 check_file_numbers_in_directory "/home/shirasagi/${NOW}" 8
 sleep 10
 
+echo ""
+echo "######## All needed packages (RPMs and sources) are install on this box ########"
+echo ""
+
 #### start mongod and enable it 
+
+echo "######## Start mongod and enable it ########"
 
 check_command_succeeded "${SYSTEMCTL_START_MONGOD}"
 check_command_succeeded "${SYSTEMCTL_ENABLE_MONGOD}"
@@ -722,7 +728,7 @@ check_command_succeeded "${SYSTEMCTL_START_NGINX}"
 
 try_command_multiple_times "${IMPORT_RVM_KEY}"
 
-echo "#### got key ####"
+echo "#### Got key ####"
 
 #### getting rvm from certain place (this will make /usr/local/rvm)
 
@@ -791,7 +797,7 @@ sed -e "s/disable: true$/disable: false/" config/defaults/recommend.yml > config
 
 #### Furigana (files should be downloaded by this time)
 
-echo "######## Furigana stuff ########"
+echo "######## Installing furigana stuff ########"
 
 echo "######## mecab ########"
 
@@ -815,7 +821,7 @@ check_command_succeeded ldconfig
 
 #### Voice (files should be downloaded by this time)
 
-echo "######## Voice stuff ########"
+echo "######## Installing voice stuff ########"
 
 echo "######## hts_engine ########"
 
