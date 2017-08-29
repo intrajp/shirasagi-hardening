@@ -625,7 +625,7 @@ done
 
 echo "Domain name will be set to '${SS_HOSTNAME}'"
 
-#### repo file for mongodb
+#### repo file for mongodb for download and installing it
 
 cat > /etc/yum.repos.d/mongodb-org-3.4.repo << "EOF"
 [mongodb-org-3.4]
@@ -636,7 +636,7 @@ enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/server-3.4.asc
 EOF
 
-#### repo file for Nginx
+#### repo file for Nginx for download and installing it
 
 cat > /etc/yum.repos.d/nginx.repo << "EOF"
 [nginx]
@@ -660,7 +660,7 @@ do
         err_msg
     fi
 done
-echo "######## All needed RPM packages are install on this box ########"
+echo "######## All needed RPM package(s) are install on this box ########"
 
 #### making temporary directory in /home/shirasagi 
 
@@ -693,7 +693,7 @@ check_file_numbers_in_directory "/home/shirasagi/${NOW}" 8
 sleep 10
 
 echo ""
-echo "######## All needed packages (RPMs and sources) are install on this box ########"
+echo "######## All needed packages --RPM(s) and sources-- are installed on this box ########"
 echo ""
 
 #### start mongod and enable it 
