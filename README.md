@@ -13,7 +13,7 @@ Documentation
 Platform
 --------
 
-- CentOS7.3 or CentOS7.4 (SELinux enabled)
+- CentOS 7.3 or CentOS 7.4 (SELinux enabled)
 - Ruby 2.3
 - Ruby on Rails 4
 - MongoDB 3
@@ -22,7 +22,7 @@ Platform
 Installation (Auto)
 -------------------
 
-- Exec installer on CentOS7.3 as root<br />
+- Exec installer on CentOS 7.3 or CentOS 7.4 as root<br />
 - Set parameter "example.jp" as domain-name or IP address.<br />
 
 ```
