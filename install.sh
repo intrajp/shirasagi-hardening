@@ -38,6 +38,7 @@ PROG_NAME="shirasagi"
 ## TODO:read version which could be allowed to propagate this program 
 
 OS_VERSION="CentOS Linux release 7.3.1611 (Core)"
+OS_VERSION2="CentOS Linux release 7.4.1708 (Core)"
 
 #### vars
 
@@ -181,14 +182,14 @@ check_OS_version()
     if [ -e "/etc/centos-release" ]; then
         ## just use xargs for trimming 
         os_version=$(cat /etc/centos-release | xargs)
-        if [ "${os_version}" = "${OS_VERSION}" ]; then
+        if [ "${os_version}" = "${OS_VERSION}" ] || [ "${os_version}" = "${OS_VERSION2}" ]; then
             echo "OS version is ${os_version}"
         else
-            echo "Only on ${OS_VERSION} could be installed"
+            echo "Only on ${OS_VERSION} or ${OS_VERSION2} could be installed"
             err_msg
         fi
     else
-        echo "Only on ${OS_VERSION} could be installed"
+        echo "Only on ${OS_VERSION} or ${OS_VERSION2} could be installed"
         err_msg
     fi
 }

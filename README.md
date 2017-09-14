@@ -13,7 +13,7 @@ Documentation
 Platform
 --------
 
-- CentOS7.3 (SELinux enabled)
+- CentOS7.3 or CentOS7.4 (SELinux enabled)
 - Ruby 2.3
 - Ruby on Rails 4
 - MongoDB 3
