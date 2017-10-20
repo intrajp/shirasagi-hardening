@@ -14,7 +14,7 @@ Platform
 --------
 
 - CentOS 7.3 or CentOS 7.4 (SELinux enabled)
-- Ruby 2.3
+- Ruby 2.4.2
 - Ruby on Rails 4
 - MongoDB 3
 - Unicorn
