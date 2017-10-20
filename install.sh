@@ -81,7 +81,7 @@ NGINX_DIR_SERVER="/etc/nginx/conf.d/server"
 
 # rvm version 
 
-RVM_VERSION="2.3.4"
+RVM_VERSION="2.4.2"
 
 # Furigana stuff
 
