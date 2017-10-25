@@ -661,7 +661,7 @@ do
         err_msg
     fi
 done
-echo "######## All needed RPM package(s) are install on this box ########"
+echo "######## All needed RPM package(s) are installed on this box ########"
 
 #### making temporary directory in /home/shirasagi 
 
