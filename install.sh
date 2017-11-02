@@ -244,7 +244,7 @@ check_shirasagi_dir_exists()
 {
     if [ -d "${SS_DIR}" ]; then
         echo "${SS_DIR} exists."
-        while :
+        while true :
         do
             echo "${SS_DIR} should be deleted for installing shirasagi anew."
             echo "Don't worry, ${SS_DIR} will be made in the installation process."
@@ -608,7 +608,7 @@ check_shirasagi_dir_exists
 
 #### ask domain name
 
-while :
+while true :
 do
     ask_domain_name
     echo -n "Are you sure setting domain name to '${SS_HOSTNAME}' ? :[y/N]"
